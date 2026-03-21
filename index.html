@@ -347,96 +347,94 @@
     </div>
   </div>
 
-  <div class="license-footer">
-    <div class="license-toggle" onclick="toggleLicense()">
-      <span>⚖️ LICENSE & TERMS</span>
-      <span id="licenseArrow">▼</span>
+<div class="license-footer">
+  <div class="license-toggle" onclick="toggleLicense()">
+    <span>⚖️ LICENSE & TERMS</span>
+    <span id="licenseArrow">▼</span>
+  </div>
+
+  <div class="license-content" id="licensePanel">
+    
+    <h3 style="color:#f5d793; margin-bottom:10px;">
+      NΞXUS Educational & Entertainment License v2.0
+    </h3>
+    <p style="font-size:0.75rem; color:#888;">Last updated: 2026-03-21</p>
+
+    <div style="margin-top:15px;">
+      <p><strong>1. Purpose</strong></p>
+      <p>All content is provided strictly for educational, experimental, and entertainment purposes only.</p>
     </div>
-    <div class="license-content" id="licensePanel">
-      <p><strong>NΞXUS Educational & Entertainment License v1.0</strong></p>
-      <p>NΞXUS Educational & Entertainment License v2.0
 
-Last updated: 2026-03-21
-
-1. Purpose
-
-All software, tools, digital assets, and downloadable content provided on this platform (“Content”) are developed and distributed strictly for educational, experimental, and entertainment purposes only.
-
-2. Acceptance of Terms
-
-By accessing, downloading, or using any Content from NΞXUS, you (“User”) agree to be legally bound by the terms of this license.
-If you do not agree, you must not use or download any Content.
-
-3. Permitted Use
-
-You are allowed to:
-
-Use the Content for personal, non-commercial purposes
-Study, analyze, and learn from the provided materials
-Modify the Content for private use only
-4. Prohibited Use
-
-You are strictly prohibited from:
-
-Using the Content for malicious, illegal, or harmful activities
-Redistributing, reselling, sublicensing, or sharing the Content without explicit written permission
-Attempting to bypass, exploit, or abuse systems, services, or security mechanisms
-Using the Content in any way that violates applicable local, national, or international laws
-5. No Warranty
-
-The Content is provided “as is”, without any warranties of any kind, express or implied.
-NΞXUS makes no guarantees regarding:
-
-Functionality
-Reliability
-Security
-Fitness for a particular purpose
-6. Limitation of Liability
-
-Under no circumstances shall NΞXUS or its creators be held liable for:
-
-Any direct or indirect damages
-Data loss
-System damage
-Legal consequences resulting from misuse
-
-Use of the Content is entirely at your own risk.
-
-7. Security & Responsibility
-
-You are solely responsible for:
-
-How you use the Content
-Any consequences resulting from its use
-Ensuring your actions comply with all applicable laws and regulations
-8. Intellectual Property
-
-All Content remains the intellectual property of NΞXUS unless otherwise stated.
-Unauthorized use, duplication, or distribution may result in legal action.
-
-9. Access Control
-
-NΞXUS reserves the right to:
-
-Restrict or revoke access to Content at any time
-Modify or remove files without prior notice
-Monitor usage for security and abuse prevention
-10. Changes to License
-
-This license may be updated at any time without prior notice. Continued use of the platform constitutes acceptance of the latest version.
-
-11. Contact
-
-For permissions, questions, or legal inquiries, contact:
-nexus.collective.contact@gmail.com
-
-⚠️ Important Notice
-This platform is intended for responsible users only.
-Any misuse may result in access restriction and potential legal consequences.</p>
+    <div>
+      <p><strong>2. Acceptance of Terms</strong></p>
+      <p>By using or downloading any content, you agree to these terms. If you do not agree, do not use the platform.</p>
     </div>
+
+    <div>
+      <p><strong>3. Permitted Use</strong></p>
+      <ul>
+        <li>Personal, non-commercial use</li>
+        <li>Learning, studying, analyzing</li>
+        <li>Private modifications</li>
+      </ul>
+    </div>
+
+    <div>
+      <p><strong>4. Prohibited Use</strong></p>
+      <ul>
+        <li>Malicious or illegal activities</li>
+        <li>Redistribution or resale</li>
+        <li>System abuse or exploitation</li>
+      </ul>
+    </div>
+
+    <div>
+      <p><strong>5. No Warranty</strong></p>
+      <p>All content is provided “as is” without any guarantees of functionality, reliability, or security.</p>
+    </div>
+
+    <div>
+      <p><strong>6. Limitation of Liability</strong></p>
+      <p>NΞXUS is not responsible for any damages, data loss, or consequences resulting from use.</p>
+    </div>
+
+    <div>
+      <p><strong>7. Responsibility</strong></p>
+      <p>You are fully responsible for how you use the content and ensuring legal compliance.</p>
+    </div>
+
+    <div>
+      <p><strong>8. Intellectual Property</strong></p>
+      <p>All content belongs to NΞXUS. Unauthorized use may result in legal action.</p>
+    </div>
+
+    <div>
+      <p><strong>9. Access Control</strong></p>
+      <ul>
+        <li>Access may be restricted anytime</li>
+        <li>Files may be modified or removed</li>
+        <li>Usage may be monitored</li>
+      </ul>
+    </div>
+
+    <div>
+      <p><strong>10. Changes</strong></p>
+      <p>Terms may change at any time. Continued use means acceptance.</p>
+    </div>
+
+    <div>
+      <p><strong>11. Contact</strong></p>
+      <p style="color:#b77cff;">nexus.collective.contact@gmail.com</p>
+    </div>
+
+    <div style="margin-top:20px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1);">
+      <p style="color:#ffcc66;"><strong>⚠ Important Notice</strong></p>
+      <p>This platform is for responsible use only. Misuse may result in access restriction or legal consequences.</p>
+    </div>
+
   </div>
 </div>
-
+  
 <script>
   // Próbálkozzunk a Firebase SDK betöltésével, ha nem lenne elérhető
   function waitForFirebase(attempts = 0) {
