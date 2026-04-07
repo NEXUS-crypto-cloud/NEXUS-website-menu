@@ -70,7 +70,6 @@
       position: relative;
     }
     .glass-card:hover { transform:translateY(-6px); border-color:rgba(212,160,23,0.5); box-shadow:0 28px 40px -15px rgba(0,0,0,0.6);}
-    /* Kiemelt kártya stílus */
     .glass-card.highlighted {
       transform: scale(1.02);
       border-color: var(--gold-primary);
@@ -78,7 +77,6 @@
       z-index: 1000;
       transition: all 0.3s ease;
     }
-    /* Locked card stílus (elhomályosítás + lakat ikon) */
     .locked-card {
       position: relative;
       filter: blur(2px);
@@ -125,14 +123,11 @@
     #tabsContent > div { display:none; }
     #tabsContent > div.active { display:block; }
     .toast-msg { position:fixed; bottom:25px; left:50%; transform:translateX(-50%); background:#1a1a2ee6; backdrop-filter:blur(12px); padding:12px 24px; border-radius:60px; font-size:0.9rem; font-weight:500; border-left:4px solid var(--gold-primary); z-index:200; color:white; pointer-events:none; white-space:nowrap; }
-    /* License Card */
     .license-card { margin-top: 3rem; background: rgba(10,10,20,0.6); backdrop-filter: blur(12px); border-radius: 2rem; padding: 1.8rem; border: 1px solid rgba(212,160,23,0.3); }
     .license-card h3 { font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; color: var(--gold-primary); }
     .license-text { font-size: 0.9rem; color: #ccc; line-height: 1.6; margin-bottom: 1.5rem; }
     .contact-btn { background: linear-gradient(95deg, #2a6ef0, #174ac9); border: none; padding: 0.7rem 1.8rem; border-radius: 60px; font-weight: 700; font-size: 1rem; color: white; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
     .contact-btn:hover { transform: scale(1.02); background: linear-gradient(95deg, #3f7eff, #2059e0); box-shadow: 0 0 12px #2a6ef0; }
-    
-    /* Highlight button (info ikon a kártya jobb felső sarkában) */
     .highlight-btn {
       position: absolute;
       top: 12px;
@@ -158,7 +153,6 @@
       transform: scale(1.1);
       border-color: white;
     }
-    /* Overlay (homályosítás) */
     .overlay {
       position: fixed;
       top: 0;
@@ -171,7 +165,6 @@
       display: none;
       cursor: pointer;
     }
-    /* Információs kártya (megjelenik a kiemelt kártya mellett) */
     .info-card {
       position: fixed;
       background: linear-gradient(145deg, #1e1a3a, #0c0a1f);
@@ -212,7 +205,6 @@
       background: var(--gold-primary);
       color: black;
     }
-    /* Pass gomb */
     .pass-btn {
       background: rgba(0,0,0,0.5);
       border: 1px solid rgba(232,183,59,0.5);
@@ -264,10 +256,8 @@
 
   <div id="overlay" class="overlay"></div>
   <div id="infoCard" class="info-card">
-    <h4><i class="fas fa-flask"></i>File Info</h4>
-    <p>This executable is a <strong>Win helper file</strong> created for development and demonstration purposes.<br><br>
-    It does <strong>not perform any actions</strong>, contains no malicious code, and is completely safe.<br><br>
-    <i class="fas fa-shield-alt"></i> No system changes, no data collection, no background processes.</p>
+    <h4><i class="fas fa-info-circle"></i> About this tool</h4>
+    <p>Loading information...</p>
     <button class="close-info" id="closeInfoBtn">Got it</button>
   </div>
 
@@ -280,10 +270,42 @@
     const userInfoArea = document.getElementById('userInfoArea');
     const userAvatarSmall = document.getElementById('userAvatarSmall');
     const userNameSmall = document.getElementById('userNameSmall');
+    
+    // Products with individual infoText
     const products = [
-      { id: "nexus_utility_tool", name: "Windows utility tool", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusHelper-V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false },
-      { id: "nexus_comming", name: "NEXUS", githubUrl: "#", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: true },
-      { id: "nexus_comming", name: "NEXUS", githubUrl: "#", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: true }
+      { 
+        id: "nexus_utility_tool", 
+        name: "Windows utility tool", 
+        githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusHelper-V1.exe", 
+        price: "Free", 
+        fileType: ".exe", 
+        os: "Win10/11", 
+        pass: "nexus", 
+        locked: false,
+        infoText: "🔧 <strong>Windows Utility Tool</strong><br><br>This lightweight system helper cleans temporary files, optimizes RAM, and provides basic system information. No background processes, no data collection. Completely safe for daily use."
+      },
+      { 
+        id: "nexus_art_generator", 
+        name: "Ascii Art Generator", 
+        githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/AsciiArtGenerator_Setup_V1.exe", 
+        price: "Free", 
+        fileType: ".exe", 
+        os: "Win10/11", 
+        pass: "nexus", 
+        locked: false,
+        infoText: "🎨 <strong>ASCII Art Generator</strong><br><br>Convert any image (JPG, PNG, BMP) into ASCII characters. Adjustable width, invert colors, copy result to clipboard or save as TXT file. Perfect for developers, artists, and terminal lovers."
+      },
+      { 
+        id: "nexus_comming", 
+        name: "NEXUS", 
+        githubUrl: "#", 
+        price: "Free", 
+        fileType: ".exe", 
+        os: "Win10/11", 
+        pass: "nexus", 
+        locked: true,
+        infoText: "🔒 <strong>Coming Soon</strong><br><br>This tool is currently under development. Stay tuned for exciting new features from NEXUS Collective. Follow our Discord and social media for updates!"
+      }
     ];
     
     const overlay = document.getElementById('overlay');
@@ -295,6 +317,16 @@
       activeCard = cardElement;
       cardElement.classList.add('highlighted');
       overlay.style.display = 'block';
+      
+      // Set custom info text from data-info attribute
+      const customInfo = cardElement.getAttribute('data-info');
+      const infoParagraph = infoCard.querySelector('p');
+      if (infoParagraph && customInfo) {
+        infoParagraph.innerHTML = customInfo;
+      } else if (infoParagraph) {
+        infoParagraph.innerHTML = "No additional information available for this tool.";
+      }
+      
       const rect = cardElement.getBoundingClientRect();
       const windowWidth = window.innerWidth;
       let leftPos = rect.right + 20;
@@ -305,6 +337,7 @@
       infoCard.style.left = leftPos + 'px';
       infoCard.style.top = topPos + 'px';
       infoCard.style.display = 'block';
+      
       function repositionOnScroll() {
         if (overlay.style.display === 'block' && activeCard) {
           const newRect = activeCard.getBoundingClientRect();
@@ -334,6 +367,11 @@
       }
       overlay.style.display = 'none';
       infoCard.style.display = 'none';
+      // Reset info text to default placeholder (optional)
+      const infoParagraph = infoCard.querySelector('p');
+      if (infoParagraph) {
+        infoParagraph.innerHTML = "Loading information...";
+      }
     }
 
     overlay.addEventListener('click', resetHighlight);
@@ -353,6 +391,9 @@
         const card = document.createElement('div'); 
         card.className = 'glass-card';
         if (prod.locked) card.classList.add('locked-card');
+        
+        // Store individual info text as data attribute
+        card.setAttribute('data-info', prod.infoText || "No additional information available.");
         
         let passButtonHtml = '';
         if (!prod.locked) {
