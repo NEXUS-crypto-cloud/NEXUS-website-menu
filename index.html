@@ -114,6 +114,7 @@
         .product-list-admin { margin-top: 1rem; max-height: 400px; overflow-y: auto; }
         .admin-product-item { background: rgba(0,0,0,0.4); border-radius: 1rem; padding: 0.8rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
         .loading-spinner { text-align: center; padding: 2rem; color: var(--primary); }
+        .realtime-badge { position: fixed; bottom: 10px; left: 10px; background: rgba(0,166,255,0.2); border-radius: 20px; padding: 4px 10px; font-size: 0.7rem; color: #00ffaa; z-index: 100; }
         @media (max-width: 900px) { .admin-two-columns { grid-template-columns: 1fr; } .wrapper { padding: 1rem; } .top-bar { right: 0.8rem; top: 0.8rem; gap: 6px; } }
     </style>
 </head>
@@ -132,36 +133,31 @@
 <div class="product-list-admin"><h4 style="color:var(--primary); margin-bottom:0.5rem;"><i class="fas fa-list"></i> <span id="manageTitle">Meglévő kártyák</span></h4><div id="adminProductList"></div></div>
 <div class="trash-section"><div class="trash-title" id="trashToggle"><i class="fas fa-trash-alt"></i> <span id="trashTitle">🗑️ Lomtár</span> <i class="fas fa-chevron-down"></i></div><div id="trashItems" class="trash-items"></div></div></div></div></div>
 <button id="licenseBtn" class="license-btn"><i class="fas fa-file-contract"></i> <span id="licenseBtnText">⚖️ LICENC & JOGI NYILATKOZAT</span></button></div>
+<div class="realtime-badge"><i class="fas fa-sync-alt"></i> <span id="realtimeStatus">Valós idejű frissítés aktív</span></div>
 <div id="licenseModal" class="overlay"><div class="modal-card modal-card-large"><h4><i class="fas fa-file-contract"></i> <span id="licenseTitle">Szoftverlicenc és Jogi nyilatkozat</span></h4><div class="license-text" id="licenseContent"></div><button class="close-modal" id="closeLicenseModalBtn"><span id="closeBtnText">Bezárás</span></button></div></div>
 <div id="requirementsModal" class="overlay"><div class="modal-card"><h4><i class="fas fa-microchip"></i> <span id="reqTitle">Rendszerkövetelmény</span></h4><p id="requirementsText"></p><button class="close-modal" id="closeModalBtn"><span id="closeReqBtnText">Bezárás</span></button></div></div>
 <div id="textEditModal" class="overlay"><div class="modal-card"><h4 id="editModalTitle">Szerkesztés</h4><textarea id="editTextarea" rows="6" style="width:100%; background:#0a1022; border:1px solid var(--primary); border-radius:1rem; padding:1rem; color:white; font-family:inherit;"></textarea><div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem;"><button id="saveEditBtn" class="admin-btn">Mentés</button><button id="cancelEditBtn" class="admin-btn admin-btn-danger">Mégse</button></div></div></div>
 <div id="highlightTooltip" class="highlight-tooltip"><h4><i class="fas fa-flask"></i> <span id="tooltipTitle">Termék infó</span></h4><p id="tooltipText"></p><button id="closeTooltipBtn" style="margin-top:12px; background:none; border:1px solid var(--primary); border-radius:30px; padding:4px 12px;"><span id="gotItText">Rendben</span></button></div>
 
 <script>
-    // ============================================================
-    // FIREBASE FIRESTORE ADATBÁZIS - MINDEN FELHASZNÁLÓNAK UGYANAZ
-    // ============================================================
     const firebaseConfig = { apiKey: "AIzaSyANzkn08nF3-_Dsg19wscz67dYRPk8pMgY", authDomain: "nexus-08.firebaseapp.com", projectId: "nexus-08", storageBucket: "nexus-08.firebasestorage.app", messagingSenderId: "1066992373942", appId: "1:1066992373942:web:cbc354f288a5c351e25617", measurementId: "G-5E16CRZ0MF" };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const provider = new firebase.auth.GoogleAuthProvider();
     const db = firebase.firestore();
     
-    // TITKOSÍTOTT ADMIN HITELESÍTÉS
     const _emailHash = "a39e125749a51c569ac9cfdb12b1de8393df63b0ad3c7b82eb52d1a861185a04";
     const _passHash = "ca68c377a947f72f3879fdd96a3e99f40392abf99b6f4fc6042f51335bd70506";
     
     async function hashEmail(text) { const encoder = new TextEncoder(); const data = encoder.encode(text.trim().toLowerCase()); const hashBuffer = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join(''); }
     async function hashPassword(text) { const encoder = new TextEncoder(); const data = encoder.encode(text); const hashBuffer = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join(''); }
     
-    // Alapértelmezett termékek (első betöltéskor)
     const defaultProducts = [
         { id: "nexus_utility_tool", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusHelper-V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false, deleted: false, category: {hu:"Rendszereszköz", en:"Utility"}, name: {hu:"Windows segédprogram", en:"Windows Utility Tool"}, requirements: {hu:"🔧 Nincs szükség külső függőségre. Windows 10/11 rendszeren fut.", en:"🔧 No additional dependencies required. Runs on Windows 10/11."}, infoText: {hu:"Könnyű rendszersegéd: temp fájlok tisztítása, RAM optimalizálás, üres mappák törlése.", en:"Lightweight system helper: temp file cleanup, RAM optimization, empty folder removal."} },
         { id: "nexus_art_generator", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/AsciiArtGenerator_Setup_V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false, deleted: false, category: {hu:"Grafika", en:"Graphics"}, name: {hu:"ASCII Art generátor", en:"ASCII Art Generator"}, requirements: {hu:"⚠️ .NET Desktop Runtime 10.0 szükséges.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0", en:"⚠️ .NET Desktop Runtime 10.0 required.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0"}, infoText: {hu:"Képek (JPG, PNG) átalakítása ASCII karakterekké. Állítható szélesség, invertálás.", en:"Convert images (JPG, PNG) to ASCII characters. Adjustable width, invert, copy to clipboard."} },
         { id: "nexus_password_generator", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusPasswordGeneratorSETUP.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false, deleted: false, category: {hu:"Jelszó", en:"Password"}, name: {hu:"Jelszó generátor", en:"Password generator"}, requirements: {hu:"⚠️ .NET Desktop Runtime 10.0 szükséges.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0", en:"⚠️ .NET Desktop Runtime 10.0 required.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0"}, infoText: {hu:"Biztonságos, egyedi jelszavak generálása (6-48 karakter, speciális jelekkel), valós idejű erősségjelzővel.", en:"Generate secure, unique passwords (6-48 characters, including special characters) with real-time strength indicator."} },
     ];
     
-    // Globális változók
     let products = [];
     let trash = [];
     let currentLang = localStorage.getItem('nexusLang') || 'hu';
@@ -169,90 +165,57 @@
     let editingProductId = null;
     let currentEditField = null;
     let adminAuthorized = false, adminEmailMatched = false;
-    let isLoading = true;
+    let productsUnsubscribe = null;
+    let trashUnsubscribe = null;
     
-    // License szövegek
     const licenseTexts = {
         hu: `<p><strong>Version 2.0 – Kutatási és Fejlesztési Licenc</strong><br>Utolsó frissítés: 2025. április</p><p><strong>1. Cél</strong><br>Kizárólag oktatási, tesztelési és kutatási célokra. Nem tartalmaz rosszindulatú kódot.</p><p><strong>2. Felelősség kizárása</strong><br>A szoftvert „AHOGY VAN” biztosítjuk, minden garancia nélkül.</p><p><strong>3. Felhasználói felelősség</strong><br>A felhasználó köteles betartani a helyi törvényeket, és megfelelő biztonsági környezetben tesztelni.</p><p><strong>4. Szellemi tulajdon</strong><br>A „NEXUS Collective” védjegy és a szoftver szerzői jogvédelem alatt áll.</p><p><strong>5. Téves pozitív riasztások</strong><br>Az alkalmazás fejlesztői eszközök miatt egyes antivírusok gyanúsíthatják. Ellenőrzött, nem tartalmaz fenyegetést.</p><p><strong>6. Adatvédelem</strong><br>A szoftver NEM gyűjt személyes adatot. Nincs telemetria.</p><p><strong>7. Licenc elfogadása</strong><br>Letöltéssel és használattal elfogadja a feltételeket. © 2025 NEXUS Collective.<br>Kapcsolat: nexus.collective.contact@gmail.com</p>`,
         en: `<p><strong>Version 2.0 – Research & Development License</strong><br>Last updated: April 2025</p><p><strong>1. Purpose</strong><br>For educational, testing and research purposes only. Contains no malicious code.</p><p><strong>2. Disclaimer</strong><br>The Software is provided "AS IS", without any warranty.</p><p><strong>3. User Responsibility</strong><br>User must comply with local laws and test in a secure environment.</p><p><strong>4. Intellectual Property</strong><br>"NEXUS Collective" trademark and software are copyrighted.</p><p><strong>5. False Positives</strong><br>Due to development tools, some antivirus may flag the file. It is verified and threat-free.</p><p><strong>6. Privacy</strong><br>The Software does NOT collect personal data. No telemetry.</p><p><strong>7. Acceptance</strong><br>By downloading and using, you accept the terms. © 2025 NEXUS Collective.<br>Contact: nexus.collective.contact@gmail.com</p>`
     };
     
-    // Fordítások
     const translations = {
-        hu: { login:"Belépés", logout:"Kilépés", loginGoogle:"Belépés Google-lel", filterAll:"Összes", download:"LETÖLTÉS", locked:"ZÁROLT", reqBtn:"Köv.", copy:"Másol", share:"Megoszt", info:"Info", noResults:"Nincs találat.", passwordAlert:(p)=>`Jelszó: ${p}`, toastCopied:" link másolva", toastDownload:" letöltés indítása", toastLocked:"🔒 Zárt tartalom", toastNoLink:"🔒 Nincs elérhető link", toastShare:"✨ Megosztva", toastShareFail:"⚠️ Megosztás sikertelen", toastCopyFail:"❌ Másolás sikertelen", close:"Bezárás", reqTitle:"Rendszerkövetelmény", tooltipTitle:"Termék infó", gotIt:"Rendben", licenseTitle:"Szoftverlicenc és Jogi nyilatkozat", licenseBtn:"⚖️ LICENC & JOGI NYILATKOZAT", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Keresés név szerint...", tabStore:"⟡ TERMÉKEK", tabCommunity:"⟡ KÖZÖSSÉG", adminPanelTitle:"Adminisztrátori felület", addBtnText:"Új kártya hozzáadása", manageTitle:"Meglévő kártyák", trashTitle:"🗑️ Lomtár", huTitle:"Magyar (HU)", enTitle:"Angol (EN)", labelNameHu:"Név", labelNameEn:"Name", labelCatHu:"Kategória", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File típus", labelOs:"OS", labelPass:"Jelszó (lakat)", labelReqHu:"Követelmény", labelReqEn:"Requirements", labelInfoHu:"Info szöveg", labelInfoEn:"Info text", labelLocked:"Zárolt (Locked)", adminPasswordPrompt:"🔐 ADMINISZTRÁTORI HITELESÍTÉS\n\nA folytatáshoz add meg a jelszót:", adminPasswordWrong:"Hibás jelszó! Nincs hozzáférés.", adminAuthSuccess:"Admin hitelesítés sikeres!", noAdminRights:"Nincs jogosultság az admin panelhez!", editModalTitle:"Szerkesztés", save:"Mentés", cancel:"Mégse", restore:"Visszaállítás", permanentDelete:"Végleges törlés", edit:"Szerkeszt", lockUnlock:"Zárolás/Ki", delete:"Törlés", loading:"Betöltés..." },
-        en: { login:"Login", logout:"Logout", loginGoogle:"Login with Google", filterAll:"All", download:"DOWNLOAD", locked:"LOCKED", reqBtn:"Req.", copy:"Copy", share:"Share", info:"Info", noResults:"No results.", passwordAlert:(p)=>`Password: ${p}`, toastCopied:" link copied", toastDownload:" download started", toastLocked:"🔒 Locked content", toastNoLink:"🔒 No link available", toastShare:"✨ Shared", toastShareFail:"⚠️ Sharing failed", toastCopyFail:"❌ Copy failed", close:"Close", reqTitle:"System Requirements", tooltipTitle:"Product Info", gotIt:"Got it", licenseTitle:"Software License & Disclaimer", licenseBtn:"⚖️ LICENSE & DISCLAIMER", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Search by name...", tabStore:"⟡ PRODUCTS", tabCommunity:"⟡ COMMUNITY", adminPanelTitle:"Administrator Panel", addBtnText:"Add new card", manageTitle:"Existing cards", trashTitle:"🗑️ Trash", huTitle:"Hungarian (HU)", enTitle:"English (EN)", labelNameHu:"Name", labelNameEn:"Name", labelCatHu:"Category", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File type", labelOs:"OS", labelPass:"Password (lock)", labelReqHu:"Requirements", labelReqEn:"Requirements", labelInfoHu:"Info text", labelInfoEn:"Info text", labelLocked:"Locked", adminPasswordPrompt:"🔐 ADMIN AUTHENTICATION\n\nEnter password to continue:", adminPasswordWrong:"Wrong password! Access denied.", adminAuthSuccess:"Admin authentication successful!", noAdminRights:"Access denied!", editModalTitle:"Edit", save:"Save", cancel:"Cancel", restore:"Restore", permanentDelete:"Permanent delete", edit:"Edit", lockUnlock:"Lock/Unlock", delete:"Delete", loading:"Loading..." }
+        hu: { login:"Belépés", logout:"Kilépés", loginGoogle:"Belépés Google-lel", filterAll:"Összes", download:"LETÖLTÉS", locked:"ZÁROLT", reqBtn:"Köv.", copy:"Másol", share:"Megoszt", info:"Info", noResults:"Nincs találat.", passwordAlert:(p)=>`Jelszó: ${p}`, toastCopied:" link másolva", toastDownload:" letöltés indítása", toastLocked:"🔒 Zárt tartalom", toastNoLink:"🔒 Nincs elérhető link", toastShare:"✨ Megosztva", toastShareFail:"⚠️ Megosztás sikertelen", toastCopyFail:"❌ Másolás sikertelen", close:"Bezárás", reqTitle:"Rendszerkövetelmény", tooltipTitle:"Termék infó", gotIt:"Rendben", licenseTitle:"Szoftverlicenc és Jogi nyilatkozat", licenseBtn:"⚖️ LICENC & JOGI NYILATKOZAT", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Keresés név szerint...", tabStore:"⟡ TERMÉKEK", tabCommunity:"⟡ KÖZÖSSÉG", adminPanelTitle:"Adminisztrátori felület", addBtnText:"Új kártya hozzáadása", manageTitle:"Meglévő kártyák", trashTitle:"🗑️ Lomtár", huTitle:"Magyar (HU)", enTitle:"Angol (EN)", labelNameHu:"Név", labelNameEn:"Name", labelCatHu:"Kategória", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File típus", labelOs:"OS", labelPass:"Jelszó (lakat)", labelReqHu:"Követelmény", labelReqEn:"Requirements", labelInfoHu:"Info szöveg", labelInfoEn:"Info text", labelLocked:"Zárolt (Locked)", adminPasswordPrompt:"🔐 ADMINISZTRÁTORI HITELESÍTÉS\n\nA folytatáshoz add meg a jelszót:", adminPasswordWrong:"Hibás jelszó! Nincs hozzáférés.", adminAuthSuccess:"Admin hitelesítés sikeres!", noAdminRights:"Nincs jogosultság az admin panelhez!", editModalTitle:"Szerkesztés", save:"Mentés", cancel:"Mégse", restore:"Visszaállítás", permanentDelete:"Végleges törlés", edit:"Szerkeszt", lockUnlock:"Zárolás/Ki", delete:"Törlés", loading:"Betöltés...", realtimeActive:"Valós idejű frissítés aktív" },
+        en: { login:"Login", logout:"Logout", loginGoogle:"Login with Google", filterAll:"All", download:"DOWNLOAD", locked:"LOCKED", reqBtn:"Req.", copy:"Copy", share:"Share", info:"Info", noResults:"No results.", passwordAlert:(p)=>`Password: ${p}`, toastCopied:" link copied", toastDownload:" download started", toastLocked:"🔒 Locked content", toastNoLink:"🔒 No link available", toastShare:"✨ Shared", toastShareFail:"⚠️ Sharing failed", toastCopyFail:"❌ Copy failed", close:"Close", reqTitle:"System Requirements", tooltipTitle:"Product Info", gotIt:"Got it", licenseTitle:"Software License & Disclaimer", licenseBtn:"⚖️ LICENSE & DISCLAIMER", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Search by name...", tabStore:"⟡ PRODUCTS", tabCommunity:"⟡ COMMUNITY", adminPanelTitle:"Administrator Panel", addBtnText:"Add new card", manageTitle:"Existing cards", trashTitle:"🗑️ Trash", huTitle:"Hungarian (HU)", enTitle:"English (EN)", labelNameHu:"Name", labelNameEn:"Name", labelCatHu:"Category", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File type", labelOs:"OS", labelPass:"Password (lock)", labelReqHu:"Requirements", labelReqEn:"Requirements", labelInfoHu:"Info text", labelInfoEn:"Info text", labelLocked:"Locked", adminPasswordPrompt:"🔐 ADMIN AUTHENTICATION\n\nEnter password to continue:", adminPasswordWrong:"Wrong password! Access denied.", adminAuthSuccess:"Admin authentication successful!", noAdminRights:"Access denied!", editModalTitle:"Edit", save:"Save", cancel:"Cancel", restore:"Restore", permanentDelete:"Permanent delete", edit:"Edit", lockUnlock:"Lock/Unlock", delete:"Delete", loading:"Loading...", realtimeActive:"Real-time updates active" }
     };
     function t(key, p=null){ let txt=translations[currentLang][key]; if(p && typeof txt==='function') return txt(p); return txt || key; }
     
     function showToast(msg, isError=false){ let d=document.createElement('div'); d.className='toast-msg'; d.innerText=msg; d.style.background=isError?'#6a1e3ccc':'#0f2a3ecc'; document.body.appendChild(d); setTimeout(()=>{ d.style.opacity='0'; setTimeout(()=>d.remove(),400); },2300); }
     function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g,function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
-    // FIRESTORE ADATKEZELÉS
-    async function loadDataFromFirestore() {
-        isLoading = true;
-        document.getElementById('storeList').innerHTML = `<div class="loading-spinner"><i class="fas fa-spinner fa-pulse"></i> ${t('loading')}</div>`;
-        try {
-            const productsSnapshot = await db.collection('products').get();
-            if (!productsSnapshot.empty) {
-                products = [];
-                productsSnapshot.forEach(doc => { products.push({ id: doc.id, ...doc.data() }); });
-            } else {
-                // Első betöltés: alapértelmezett termékek mentése
-                for (const prod of defaultProducts) {
-                    await db.collection('products').doc(prod.id).set(prod);
-                    products.push(prod);
-                }
+    function setupRealtimeListeners() {
+        if (productsUnsubscribe) productsUnsubscribe();
+        if (trashUnsubscribe) trashUnsubscribe();
+        
+        productsUnsubscribe = db.collection('products').onSnapshot((snapshot) => {
+            products = [];
+            snapshot.forEach(doc => {
+                products.push({ id: doc.id, ...doc.data() });
+            });
+            renderStore();
+            buildCategoryFilters();
+            if (adminAuthorized) {
+                renderAdminList();
+                updateCategorySelects();
             }
-            const trashSnapshot = await db.collection('trash').get();
-            if (!trashSnapshot.empty) {
-                trash = [];
-                trashSnapshot.forEach(doc => { trash.push({ id: doc.id, ...doc.data() }); });
-            } else {
-                trash = [];
-            }
-        } catch (error) {
-            console.error("Firestore hiba:", error);
-            showToast("Adatbázis hiba! Ellenőrizd a konzolt.", true);
-        }
-        isLoading = false;
-        renderStore();
-        buildCategoryFilters();
-        if (adminAuthorized) renderAdminList();
+            document.getElementById('realtimeStatus').innerHTML = `<i class="fas fa-check-circle"></i> ${t('realtimeActive')}`;
+        }, (error) => {
+            console.error("Products listener error:", error);
+            showToast("Adatbázis hiba!", true);
+        });
+        
+        trashUnsubscribe = db.collection('trash').onSnapshot((snapshot) => {
+            trash = [];
+            snapshot.forEach(doc => {
+                trash.push({ id: doc.id, ...doc.data() });
+            });
+            if (adminAuthorized) renderTrashList();
+        }, (error) => {
+            console.error("Trash listener error:", error);
+        });
     }
     
-    async function saveProductsToFirestore() {
-        if (!adminAuthorized) return;
-        try {
-            for (const prod of products) {
-                await db.collection('products').doc(prod.id).set(prod);
-            }
-            // Töröljük a firestore-ból azokat, amik már nincsenek a products-ban
-            const allDocs = await db.collection('products').get();
-            for (const doc of allDocs.docs) {
-                if (!products.find(p => p.id === doc.id)) {
-                    await db.collection('products').doc(doc.id).delete();
-                }
-            }
-        } catch (error) { console.error("Mentési hiba:", error); }
-    }
-    
-    async function saveTrashToFirestore() {
-        if (!adminAuthorized) return;
-        try {
-            const allTrash = await db.collection('trash').get();
-            for (const doc of allTrash.docs) {
-                await db.collection('trash').doc(doc.id).delete();
-            }
-            for (const item of trash) {
-                await db.collection('trash').doc(item.id).set(item);
-            }
-        } catch (error) { console.error("Lomtár mentési hiba:", error); }
-    }
-    
-    // RENDER FUNKCIÓK
     async function renderStore(){
         const container=document.getElementById('storeList'); if(!container) return;
-        if(isLoading) return;
         let filtered=products.filter(p=>!p.deleted && p.name[currentLang].toLowerCase().includes(searchQuery) && (activeCategory==='all' || p.category[currentLang]===activeCategory));
         if(filtered.length===0){ container.innerHTML=`<div class="no-results"><i class="fas fa-box-open"></i> ${t('noResults')}</div>`; return; }
         container.innerHTML='';
@@ -290,7 +253,6 @@
     }
     document.getElementById('searchInput').addEventListener('input',e=>{ searchQuery=e.target.value.toLowerCase(); renderStore(); });
     
-    // ADMIN FUNKCIÓK
     async function checkAdminAccess(user) {
         if(user && user.email){ const emailHash=await hashEmail(user.email); if(emailHash===_emailHash){ adminEmailMatched=true; document.getElementById('adminTabBtn').style.display='block'; return; } }
         adminEmailMatched=false; adminAuthorized=false; document.getElementById('adminTabBtn').style.display='none';
@@ -300,7 +262,7 @@
     function requestAdminPassword(callback){
         if(adminAuthorized){ if(callback) callback(true); return; }
         const pwd=prompt(t('adminPasswordPrompt'));
-        if(pwd){ hashPassword(pwd).then(pwdHash=>{ if(pwdHash===_passHash){ adminAuthorized=true; showToast(t('adminAuthSuccess'),false); loadDataFromFirestore(); if(callback) callback(true); } else { alert(t('adminPasswordWrong')); adminAuthorized=false; if(callback) callback(false); } }); }
+        if(pwd){ hashPassword(pwd).then(pwdHash=>{ if(pwdHash===_passHash){ adminAuthorized=true; showToast(t('adminAuthSuccess'),false); if(callback) callback(true); } else { alert(t('adminPasswordWrong')); adminAuthorized=false; if(callback) callback(false); } }); }
         else { if(callback) callback(false); }
     }
     
@@ -333,32 +295,20 @@
         const index = products.findIndex(p=>p.id===id);
         if(index!==-1){
             const deletedProduct = {...products[index], locked: true, deleted: true};
-            const trashId = "trash_"+Date.now()+"_"+Math.random();
-            trash.unshift({ id: trashId, product: deletedProduct, deletedAt: Date.now() });
-            products.splice(index,1);
-            await saveProductsToFirestore();
-            await saveTrashToFirestore();
-            renderAdminList();
-            renderStore();
-            buildCategoryFilters();
-            updateCategorySelects();
+            const trashId = "trash_"+Date.now()+"_"+Math.random().toString(36).substr(2, 6);
+            await db.collection('trash').doc(trashId).set({ id: trashId, product: deletedProduct, deletedAt: Date.now() });
+            await db.collection('products').doc(id).delete();
             showToast(currentLang==='hu'?'Termék a lomtárba helyezve (zárolt állapotban)':'Product moved to trash (locked)');
         }
     };
     
     window.restoreFromTrash = async function(trashId){
         if(!adminAuthorized){ requestAdminPassword((s)=>{ if(s) restoreFromTrash(trashId); }); return; }
-        const index = trash.findIndex(item=>item.id===trashId);
-        if(index!==-1){
-            const restored = {...trash[index].product, locked: true, deleted: false};
-            products.push(restored);
-            trash.splice(index,1);
-            await saveProductsToFirestore();
-            await saveTrashToFirestore();
-            renderAdminList();
-            renderStore();
-            buildCategoryFilters();
-            updateCategorySelects();
+        const trashDoc = await db.collection('trash').doc(trashId).get();
+        if(trashDoc.exists){
+            const restored = {...trashDoc.data().product, locked: true, deleted: false};
+            await db.collection('products').doc(restored.id).set(restored);
+            await db.collection('trash').doc(trashId).delete();
             showToast(currentLang==='hu'?'Termék visszaállítva (zárolt állapotban)':'Product restored (locked)');
         }
     };
@@ -366,13 +316,8 @@
     window.permanentDelete = async function(trashId){
         if(!adminAuthorized){ requestAdminPassword((s)=>{ if(s) permanentDelete(trashId); }); return; }
         if(confirm(currentLang==='hu'?'Véglegesen törlöd? Ez nem visszavonható!':'Permanent delete? This cannot be undone!')){
-            const index = trash.findIndex(item=>item.id===trashId);
-            if(index!==-1){
-                trash.splice(index,1);
-                await saveTrashToFirestore();
-                renderTrashList();
-                showToast(currentLang==='hu'?'Véglegesen törölve':'Permanently deleted');
-            }
+            await db.collection('trash').doc(trashId).delete();
+            showToast(currentLang==='hu'?'Véglegesen törölve':'Permanently deleted');
         }
     };
     
@@ -386,13 +331,15 @@
     document.getElementById('saveEditBtn').onclick = async () => {
         if(currentEditField && editingProductId){
             const newValue = document.getElementById('editTextarea').value;
-            const product = products.find(p=>p.id===editingProductId);
-            if(product){
+            const productRef = db.collection('products').doc(editingProductId);
+            const productDoc = await productRef.get();
+            if(productDoc.exists){
+                const product = productDoc.data();
                 if(currentEditField.field === 'reqHu') product.requirements.hu = newValue;
                 else if(currentEditField.field === 'reqEn') product.requirements.en = newValue;
                 else if(currentEditField.field === 'infoHu') product.infoText.hu = newValue;
                 else if(currentEditField.field === 'infoEn') product.infoText.en = newValue;
-                await saveProductsToFirestore();
+                await productRef.set(product);
                 renderStore();
                 if(adminAuthorized) renderAdminList();
                 const displayDiv = document.querySelector(`.clickable-textarea[data-field="${currentEditField.field}"]`);
@@ -428,22 +375,21 @@
         const addBtn = document.getElementById('addProductBtn');
         addBtn.innerHTML = `<i class="fas fa-save"></i> ${currentLang==='hu'?'Módosítás mentése':'Save changes'}`;
         addBtn.onclick = async () => {
-            p.name.hu = document.getElementById('prodNameHu').value;
-            p.name.en = document.getElementById('prodNameEn').value;
-            const newCatHu = document.getElementById('prodCatHuSelect').value;
-            if(newCatHu) p.category.hu = newCatHu;
-            const newCatEn = document.getElementById('prodCatEnSelect').value;
-            if(newCatEn) p.category.en = newCatEn;
-            p.githubUrl = document.getElementById('prodUrl').value;
-            p.fileType = document.getElementById('prodFileType').value;
-            p.os = document.getElementById('prodOs').value;
-            p.pass = document.getElementById('prodPass').value;
-            p.locked = document.getElementById('prodLocked').value === 'true';
-            await saveProductsToFirestore();
-            renderStore();
-            buildCategoryFilters();
-            renderAdminList();
-            updateCategorySelects();
+            const productRef = db.collection('products').doc(id);
+            const updatedProduct = {
+                ...p,
+                name: { hu: document.getElementById('prodNameHu').value, en: document.getElementById('prodNameEn').value },
+                category: { 
+                    hu: document.getElementById('prodCatHuSelect').value || p.category.hu,
+                    en: document.getElementById('prodCatEnSelect').value || p.category.en
+                },
+                githubUrl: document.getElementById('prodUrl').value,
+                fileType: document.getElementById('prodFileType').value,
+                os: document.getElementById('prodOs').value,
+                pass: document.getElementById('prodPass').value,
+                locked: document.getElementById('prodLocked').value === 'true'
+            };
+            await productRef.set(updatedProduct);
             addBtn.innerHTML = `<i class="fas fa-plus"></i> ${t('addBtnText')}`;
             addBtn.onclick = addNewProduct;
             document.querySelectorAll('#adminTab input, #adminTab select').forEach(i=>i.value='');
@@ -456,20 +402,37 @@
     window.toggleLockById = async function(id){
         if(!adminAuthorized){ requestAdminPassword((s)=>{ if(s) toggleLockById(id); }); return; }
         const p = products.find(p=>p.id===id);
-        if(p){ p.locked = !p.locked; await saveProductsToFirestore(); renderStore(); renderAdminList(); showToast(`${currentLang==='hu'?'Zárolás állapot':'Lock status'}: ${p.locked?(currentLang==='hu'?'ZÁROLT':'LOCKED'):(currentLang==='hu'?'NYITOTT':'OPEN')}`); }
+        if(p){ 
+            await db.collection('products').doc(id).update({ locked: !p.locked });
+            showToast(`${currentLang==='hu'?'Zárolás állapot':'Lock status'}: ${!p.locked?(currentLang==='hu'?'ZÁROLT':'LOCKED'):(currentLang==='hu'?'NYITOTT':'OPEN')}`);
+        }
     };
     
     async function addNewProduct(){
         if(!adminAuthorized){ requestAdminPassword((s)=>{ if(s) addNewProduct(); }); return; }
         const newId = "prod_"+Date.now()+"_"+Math.random().toString(36).substr(2, 6);
-        const newProd = { id: newId, githubUrl: document.getElementById('prodUrl').value, price: "Free", fileType: document.getElementById('prodFileType').value, os: document.getElementById('prodOs').value, pass: document.getElementById('prodPass').value, locked: document.getElementById('prodLocked').value==='true', deleted: false, category: { hu: document.getElementById('prodCatHuSelect').value || "Egyéb", en: document.getElementById('prodCatEnSelect').value || "Other" }, name: { hu: document.getElementById('prodNameHu').value, en: document.getElementById('prodNameEn').value }, requirements: { hu: "", en: "" }, infoText: { hu: "", en: "" } };
+        const newProd = { 
+            id: newId, 
+            githubUrl: document.getElementById('prodUrl').value, 
+            price: "Free", 
+            fileType: document.getElementById('prodFileType').value, 
+            os: document.getElementById('prodOs').value, 
+            pass: document.getElementById('prodPass').value, 
+            locked: document.getElementById('prodLocked').value==='true', 
+            deleted: false, 
+            category: { 
+                hu: document.getElementById('prodCatHuSelect').value || "Egyéb", 
+                en: document.getElementById('prodCatEnSelect').value || "Other" 
+            }, 
+            name: { 
+                hu: document.getElementById('prodNameHu').value, 
+                en: document.getElementById('prodNameEn').value 
+            }, 
+            requirements: { hu: "", en: "" }, 
+            infoText: { hu: "", en: "" } 
+        };
         if(!newProd.name.hu || !newProd.name.en){ showToast(currentLang==='hu'?'Név megadása kötelező!':'Name is required!',true); return; }
-        products.push(newProd);
-        await saveProductsToFirestore();
-        renderStore();
-        buildCategoryFilters();
-        renderAdminList();
-        updateCategorySelects();
+        await db.collection('products').doc(newId).set(newProd);
         document.querySelectorAll('#adminTab input, #adminTab select').forEach(i=>i.value='');
         document.querySelectorAll('.clickable-textarea').forEach(div=>div.innerHTML='📝 '+(currentLang==='hu'?'Kattints ide a szerkesztéshez':'Click to edit'));
         showToast(t('adminAuthSuccess'));
@@ -480,8 +443,18 @@
     
     ['newCatHuBtn','newCatEnBtn'].forEach(btnId=>{ document.getElementById(btnId)?.addEventListener('click',()=>{ const isHu=btnId==='newCatHuBtn'; const inputId=isHu?'prodCatHuNew':'prodCatEnNew'; const selectId=isHu?'prodCatHuSelect':'prodCatEnSelect'; const input=document.getElementById(inputId); if(input.style.display==='none'){ input.style.display='block'; input.focus(); input.onblur=()=>{ if(input.value.trim()){ const newOption=document.createElement('option'); newOption.value=input.value.trim(); newOption.textContent=input.value.trim(); const select=document.getElementById(selectId); select.appendChild(newOption); select.value=input.value.trim(); input.style.display='none'; input.value=''; showToast(currentLang==='hu'?'Új kategória hozzáadva':'New category added'); } else { input.style.display='none'; input.value=''; } }; } else { input.style.display='none'; input.value=''; } }); });
     
+    async function initializeDatabase() {
+        const snapshot = await db.collection('products').get();
+        if (snapshot.empty) {
+            for (const prod of defaultProducts) {
+                await db.collection('products').doc(prod.id).set(prod);
+            }
+        }
+    }
+    
     function applyLanguage(){
         document.getElementById('tabStore').innerText=t('tabStore'); document.getElementById('tabCommunity').innerText=t('tabCommunity'); document.getElementById('subText').innerText=t('subText'); document.getElementById('searchInput').placeholder=t('searchPlaceholder'); document.getElementById('licenseBtnText').innerText=t('licenseBtn'); document.getElementById('licenseTitle').innerText=t('licenseTitle'); document.getElementById('closeBtnText').innerText=t('close'); document.getElementById('reqTitle').innerText=t('reqTitle'); document.getElementById('closeReqBtnText').innerText=t('close'); document.getElementById('tooltipTitle').innerText=t('tooltipTitle'); document.getElementById('gotItText').innerText=t('gotIt'); document.getElementById('adminPanelTitle').innerText=t('adminPanelTitle'); document.getElementById('addBtnText').innerText=t('addBtnText'); document.getElementById('manageTitle').innerText=t('manageTitle'); document.getElementById('trashTitle').innerText=t('trashTitle'); document.getElementById('huTitle').innerText=t('huTitle'); document.getElementById('enTitle').innerText=t('enTitle'); document.getElementById('labelNameHu').innerText=t('labelNameHu'); document.getElementById('labelNameEn').innerText=t('labelNameEn'); document.getElementById('labelCatHu').innerText=t('labelCatHu'); document.getElementById('labelCatEn').innerText=t('labelCatEn'); document.getElementById('labelUrl').innerText=t('labelUrl'); document.getElementById('labelFileType').innerText=t('labelFileType'); document.getElementById('labelOs').innerText=t('labelOs'); document.getElementById('labelPass').innerText=t('labelPass'); document.getElementById('labelReqHu').innerText=t('labelReqHu'); document.getElementById('labelReqEn').innerText=t('labelReqEn'); document.getElementById('labelInfoHu').innerText=t('labelInfoHu'); document.getElementById('labelInfoEn').innerText=t('labelInfoEn'); document.getElementById('labelLocked').innerText=t('labelLocked'); document.getElementById('licenseContent').innerHTML = licenseTexts[currentLang];
+        document.getElementById('realtimeStatus').innerHTML = `<i class="fas fa-check-circle"></i> ${t('realtimeActive')}`;
         const loginSpan=document.getElementById('loginText'); if(loginSpan) loginSpan.innerText=auth.currentUser?t('logout'):t('login');
         const authBtnElem=document.getElementById('authActionBtn'); if(authBtnElem){ if(auth.currentUser) authBtnElem.innerHTML=`<i class="fas fa-sign-out-alt"></i> ${t('logout')}`; else authBtnElem.innerHTML=`<i class="fab fa-google"></i> ${t('loginGoogle')}`; }
         buildCategoryFilters(); renderStore(); updateCategorySelects();
@@ -495,8 +468,20 @@
     
     const authBtn=document.getElementById('authActionBtn'), userInfoArea=document.getElementById('userInfoArea'), userAvatarSmall=document.getElementById('userAvatarSmall'), userNameSmall=document.getElementById('userNameSmall');
     function updateAuthUI(user){
-        if(user){ authBtn.innerHTML=`<i class="fas fa-sign-out-alt"></i> ${t('logout')}`; authBtn.onclick=()=>auth.signOut(); userInfoArea.style.display='flex'; userAvatarSmall.src=user.photoURL||'https://placehold.co/40x40/0a1220/cyan?text=U'; userNameSmall.innerText=user.displayName||user.email?.split('@')[0]||(currentLang==='hu'?'Felhasználó':'User'); checkAdminAccess(user); if(adminEmailMatched) loadDataFromFirestore(); else { isLoading=false; renderStore(); } }
-        else{ authBtn.innerHTML=`<i class="fab fa-google"></i> ${t('loginGoogle')}`; authBtn.onclick=()=>auth.signInWithPopup(provider).catch(err=>showToast(`Login error: ${err.message}`,true)); userInfoArea.style.display='none'; adminEmailMatched=false; adminAuthorized=false; document.getElementById('adminTabBtn').style.display='none'; loadDataFromFirestore(); }
+        if(user){ 
+            authBtn.innerHTML=`<i class="fas fa-sign-out-alt"></i> ${t('logout')}`; authBtn.onclick=()=>auth.signOut(); 
+            userInfoArea.style.display='flex'; 
+            userAvatarSmall.src=user.photoURL||'https://placehold.co/40x40/0a1220/cyan?text=U'; 
+            userNameSmall.innerText=user.displayName||user.email?.split('@')[0]||(currentLang==='hu'?'Felhasználó':'User'); 
+            checkAdminAccess(user); 
+        } else { 
+            authBtn.innerHTML=`<i class="fab fa-google"></i> ${t('loginGoogle')}`; 
+            authBtn.onclick=()=>auth.signInWithPopup(provider).catch(err=>showToast(`Login error: ${err.message}`,true)); 
+            userInfoArea.style.display='none'; 
+            adminEmailMatched=false; 
+            adminAuthorized=false; 
+            document.getElementById('adminTabBtn').style.display='none'; 
+        }
     }
     auth.onAuthStateChanged(updateAuthUI);
     
@@ -509,7 +494,9 @@
     document.getElementById('textEditModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('textEditModal')) document.getElementById('textEditModal').style.display='none'; });
     
     setLanguage(currentLang);
-    loadDataFromFirestore();
+    initializeDatabase().then(() => {
+        setupRealtimeListeners();
+    });
 </script>
 </body>
 </html>
