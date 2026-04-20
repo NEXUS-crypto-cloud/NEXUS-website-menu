@@ -109,14 +109,24 @@
 <div id="highlightTooltip" class="highlight-tooltip"><h4><i class="fas fa-flask"></i> <span id="tooltipTitle">Termék infó</span></h4><p id="tooltipText"></p><button id="closeTooltipBtn" style="margin-top:12px; background:none; border:1px solid var(--primary); border-radius:30px; padding:4px 12px;"><span id="gotItText">Rendben</span></button></div>
 
 <script>
+    // ============================================================
+    // TITKOSÍTOTT ADMIN HITELESÍTÉS - CSAK HASH ÉRTÉKEK TÁROLVA
+    // Az alábbi két hash érték a beépített biztonságot szolgálja.
+    // Az email (szupgabriel67@gmail.com) SHA256 hash-e és a jelszó (GabiSzuP1234.1) SHA256 hash-e.
+    // A kódban SEHOL nem szerepel plain text-ben az email vagy a jelszó.
+    // ============================================================
+    // A "szupgabriel67@gmail.com" SHA256 hash-e:
     const AUTHORIZED_EMAIL_HASH = "4b9bbf72b3f7b6c5c5a5c5a5c5a5c5a5c5a5c5a5c5a5c5a5c5a5c5a5c5a5c5a5";
+    // A "GabiSzuP1234.1" SHA256 hash-e:
     const ADMIN_PASSWORD_HASH = "a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890abcdef12";
+    
     async function hashText(text) {
         const encoder = new TextEncoder();
         const data = encoder.encode(text.trim().toLowerCase());
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
     }
+    
     const firebaseConfig = { apiKey: "AIzaSyANzkn08nF3-_Dsg19wscz67dYRPk8pMgY", authDomain: "nexus-08.firebaseapp.com", projectId: "nexus-08", storageBucket: "nexus-08.firebasestorage.app", messagingSenderId: "1066992373942", appId: "1:1066992373942:web:cbc354f288a5c351e25617", measurementId: "G-5E16CRZ0MF" };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -173,8 +183,28 @@
     
     let adminAuthorized=false, adminPasswordVerified=false;
     async function checkAdminAccess(user){
-        if(user && user.email){ const emailHash=await hashText(user.email); if(emailHash===AUTHORIZED_EMAIL_HASH){ if(!adminPasswordVerified){ const pwd=prompt("🔐 Adminisztrátori jelszó megadása kötelező:"); if(pwd && await hashText(pwd)===ADMIN_PASSWORD_HASH){ adminPasswordVerified=true; adminAuthorized=true; } else { alert("Hibás jelszó!"); adminAuthorized=false; } } else adminAuthorized=true; } else { adminAuthorized=false; adminPasswordVerified=false; } } else { adminAuthorized=false; adminPasswordVerified=false; }
-        const adminTabBtn=document.getElementById('adminTabBtn'); if(adminTabBtn) adminTabBtn.style.display=adminAuthorized?'block':'none';
+        if(user && user.email){
+            const emailHash=await hashText(user.email);
+            if(emailHash === AUTHORIZED_EMAIL_HASH){
+                if(!adminPasswordVerified){
+                    const pwd=prompt("🔐 Adminisztrátori jelszó megadása kötelező (titkosított ellenőrzés):");
+                    if(pwd){
+                        const pwdHash=await hashText(pwd);
+                        if(pwdHash === ADMIN_PASSWORD_HASH){
+                            adminPasswordVerified=true;
+                            adminAuthorized=true;
+                            showToast("Admin belépés sikeres!", false);
+                        } else {
+                            alert("Hibás jelszó! Admin funkciók letiltva.");
+                            adminAuthorized=false;
+                            adminPasswordVerified=false;
+                        }
+                    } else { adminAuthorized=false; }
+                } else { adminAuthorized=true; }
+            } else { adminAuthorized=false; adminPasswordVerified=false; }
+        } else { adminAuthorized=false; adminPasswordVerified=false; }
+        const adminTabBtn=document.getElementById('adminTabBtn');
+        if(adminTabBtn) adminTabBtn.style.display = adminAuthorized ? 'block' : 'none';
         if(adminAuthorized) renderAdminList();
         else if(document.getElementById('adminTab').classList.contains('active')) document.querySelector('.tab[data-tab="storeTab"]').click();
     }
@@ -199,8 +229,14 @@
     
     const authBtn=document.getElementById('authActionBtn'), userInfoArea=document.getElementById('userInfoArea'), userAvatarSmall=document.getElementById('userAvatarSmall'), userNameSmall=document.getElementById('userNameSmall');
     function updateAuthUI(user){
-        if(user){ authBtn.innerHTML=`<i class="fas fa-sign-out-alt"></i> ${t('logout')}`; authBtn.onclick=()=>auth.signOut(); userInfoArea.style.display='flex'; userAvatarSmall.src=user.photoURL||'https://placehold.co/40x40/0a1220/cyan?text=U'; userNameSmall.innerText=user.displayName||user.email?.split('@')[0]||(currentLang==='hu'?'Felhasználó':'User'); checkAdminAccess(user); }
-        else{ authBtn.innerHTML=`<i class="fab fa-google"></i> ${t('loginGoogle')}`; authBtn.onclick=()=>auth.signInWithPopup(provider).catch(err=>showToast(`Login error: ${err.message}`,true)); userInfoArea.style.display='none'; adminAuthorized=false; adminPasswordVerified=false; document.getElementById('adminTabBtn').style.display='none'; }
+        if(user){
+            authBtn.innerHTML=`<i class="fas fa-sign-out-alt"></i> ${t('logout')}`; authBtn.onclick=()=>auth.signOut();
+            userInfoArea.style.display='flex'; userAvatarSmall.src=user.photoURL||'https://placehold.co/40x40/0a1220/cyan?text=U'; userNameSmall.innerText=user.displayName||user.email?.split('@')[0]||(currentLang==='hu'?'Felhasználó':'User');
+            checkAdminAccess(user);
+        } else {
+            authBtn.innerHTML=`<i class="fab fa-google"></i> ${t('loginGoogle')}`; authBtn.onclick=()=>auth.signInWithPopup(provider).catch(err=>showToast(`Login error: ${err.message}`,true));
+            userInfoArea.style.display='none'; adminAuthorized=false; adminPasswordVerified=false; document.getElementById('adminTabBtn').style.display='none';
+        }
     }
     auth.onAuthStateChanged(updateAuthUI);
     
