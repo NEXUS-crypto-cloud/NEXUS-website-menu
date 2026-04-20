@@ -140,7 +140,7 @@
 <div id="licenseModal" class="overlay"><div class="modal-card modal-card-large"><h4><i class="fas fa-file-contract"></i> <span id="licenseTitle">Szoftverlicenc és Jogi nyilatkozat</span></h4><div class="license-text" id="licenseContent"></div><button class="close-modal" id="closeLicenseModalBtn"><span id="closeBtnText">Bezárás</span></button></div></div>
 <div id="warningModal" class="overlay"><div class="modal-card modal-card-large"><h4><i class="fas fa-exclamation-triangle"></i> <span id="warningTitle">⚠️ Vírusfigyelmeztetés</span></h4><div class="warning-text" id="warningContent"></div><button class="close-modal" id="closeWarningModalBtn"><span id="warningCloseBtn">Bezárás</span></button></div></div>
 <div id="requirementsModal" class="overlay"><div class="modal-card"><h4><i class="fas fa-microchip"></i> <span id="reqTitle">Rendszerkövetelmény</span></h4><p id="requirementsText"></p><button class="close-modal" id="closeModalBtn"><span id="closeReqBtnText">Bezárás</span></button></div></div>
-<div id="textEditModal" class="overlay"><div class="modal-card"><h4 id="editModalTitle">Szerkesztés</h4><textarea id="editTextarea" rows="6" style="width:100%; background:#0a1022; border:1px solid var(--primary); border-radius:1rem; padding:1rem; color:white; font-family:inherit;"></textarea><div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem;"><button id="saveEditBtn" class="admin-btn">Mentés</button><button id="cancelEditBtn" class="admin-btn admin-btn-danger">Mégse</button></div></div></div>
+<div id="textEditModal" class="overlay"><div class="modal-card"><h4 id="editModalTitle">Szerkesztés</h4><textarea id="editTextarea" rows="6" style="width:100%; background:#0a1022; border:1px solid var(--primary); border-radius:1rem; padding:1rem; color:white; font-family:inherit;"></textarea><div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem;"><button id="cancelEditBtn" class="admin-btn admin-btn-danger">Bezárás</button></div></div></div>
 <div id="highlightTooltip" class="highlight-tooltip"><h4><i class="fas fa-flask"></i> <span id="tooltipTitle">Termék infó</span></h4><p id="tooltipText"></p><button id="closeTooltipBtn" style="margin-top:12px; background:none; border:1px solid var(--primary); border-radius:30px; padding:4px 12px;"><span id="gotItText">Rendben</span></button></div>
 
 <script>
@@ -168,6 +168,7 @@ let currentLang = localStorage.getItem('nexusLang') || 'hu';
 let activeCategory = "all", searchQuery = "";
 let editingProductId = null;
 let currentEditField = null;
+let tempEditedValue = "";
 let adminAuthorized = false, adminEmailMatched = false;
 let productsUnsubscribe = null;
 let trashUnsubscribe = null;
@@ -320,37 +321,24 @@ function openTextEditor(field, lang, currentValue){
     currentEditField = { field, lang };
     document.getElementById('editModalTitle').innerText = t('editModalTitle') + ` - ${field} (${lang.toUpperCase()})`;
     document.getElementById('editTextarea').value = currentValue || '';
+    tempEditedValue = currentValue || '';
     document.getElementById('textEditModal').style.display = 'flex';
 }
 
-document.getElementById('saveEditBtn').onclick = async () => {
-    if(currentEditField && editingProductId){
-        const newValue = document.getElementById('editTextarea').value;
-        const productRef = db.collection('products').doc(editingProductId);
-        const productDoc = await productRef.get();
-        if(productDoc.exists){
-            const product = productDoc.data();
-            if(currentEditField.field === 'reqHu') product.requirements.hu = newValue;
-            else if(currentEditField.field === 'reqEn') product.requirements.en = newValue;
-            else if(currentEditField.field === 'infoHu') product.infoText.hu = newValue;
-            else if(currentEditField.field === 'infoEn') product.infoText.en = newValue;
-            await productRef.set(product);
-            const localProduct = products.find(p => p.id === editingProductId);
-            if(localProduct) {
-                if(currentEditField.field === 'reqHu') localProduct.requirements.hu = newValue;
-                else if(currentEditField.field === 'reqEn') localProduct.requirements.en = newValue;
-                else if(currentEditField.field === 'infoHu') localProduct.infoText.hu = newValue;
-                else if(currentEditField.field === 'infoEn') localProduct.infoText.en = newValue;
-            }
-            const displayDiv = document.querySelector(`.clickable-textarea[data-field="${currentEditField.field}"]`);
-            if(displayDiv) displayDiv.innerHTML = newValue.substring(0,100) + (newValue.length>100?'...':'') || '📝 '+(currentLang==='hu'?'Kattints ide a szerkesztéshez':'Click to edit');
-            showToast(currentLang==='hu'?'Mentve!':'Saved!');
-        }
-    }
+document.getElementById('editTextarea').addEventListener('input', (e) => {
+    tempEditedValue = e.target.value;
+});
+
+function closeModalWithoutSave() {
     document.getElementById('textEditModal').style.display = 'none';
     currentEditField = null;
-};
-document.getElementById('cancelEditBtn').onclick = () => { document.getElementById('textEditModal').style.display = 'none'; currentEditField = null; };
+    tempEditedValue = "";
+}
+
+document.getElementById('cancelEditBtn').onclick = closeModalWithoutSave;
+document.getElementById('textEditModal').addEventListener('click', (e) => { 
+    if(e.target === document.getElementById('textEditModal')) closeModalWithoutSave(); 
+});
 
 window.editProductById = function(id){
     if(!adminAuthorized){ requestAdminPassword((s)=>{ if(s) editProductById(id); }); return; }
@@ -375,6 +363,16 @@ window.editProductById = function(id){
     const addBtn = document.getElementById('addProductBtn');
     addBtn.innerHTML = `<i class="fas fa-save"></i> ${currentLang==='hu'?'Módosítás mentése':'Save changes'}`;
     addBtn.onclick = async () => {
+        let updatedRequirementsHu = p.requirements.hu;
+        let updatedRequirementsEn = p.requirements.en;
+        let updatedInfoHu = p.infoText.hu;
+        let updatedInfoEn = p.infoText.en;
+        if(currentEditField) {
+            if(currentEditField.field === 'reqHu') updatedRequirementsHu = tempEditedValue;
+            else if(currentEditField.field === 'reqEn') updatedRequirementsEn = tempEditedValue;
+            else if(currentEditField.field === 'infoHu') updatedInfoHu = tempEditedValue;
+            else if(currentEditField.field === 'infoEn') updatedInfoEn = tempEditedValue;
+        }
         const updatedProduct = {
             ...p,
             name: { hu: document.getElementById('prodNameHu').value, en: document.getElementById('prodNameEn').value },
@@ -386,7 +384,9 @@ window.editProductById = function(id){
             fileType: document.getElementById('prodFileType').value,
             os: document.getElementById('prodOs').value,
             pass: document.getElementById('prodPass').value,
-            locked: document.getElementById('prodLocked').value === 'true'
+            locked: document.getElementById('prodLocked').value === 'true',
+            requirements: { hu: updatedRequirementsHu, en: updatedRequirementsEn },
+            infoText: { hu: updatedInfoHu, en: updatedInfoEn }
         };
         await db.collection('products').doc(id).set(updatedProduct);
         addBtn.innerHTML = `<i class="fas fa-plus"></i> ${t('addBtnText')}`;
@@ -394,6 +394,8 @@ window.editProductById = function(id){
         document.querySelectorAll('#adminTab input, #adminTab select').forEach(i=>i.value='');
         document.querySelectorAll('.clickable-textarea').forEach(div=>div.innerHTML='📝 '+(currentLang==='hu'?'Kattints ide a szerkesztéshez':'Click to edit'));
         editingProductId = null;
+        currentEditField = null;
+        tempEditedValue = "";
         showToast(t('adminAuthSuccess'));
     };
 };
@@ -512,7 +514,6 @@ document.getElementById('closeModalBtn').addEventListener('click',()=>document.g
 document.getElementById('licenseModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('licenseModal')) document.getElementById('licenseModal').style.display='none'; });
 document.getElementById('warningModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('warningModal')) document.getElementById('warningModal').style.display='none'; });
 document.getElementById('requirementsModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('requirementsModal')) document.getElementById('requirementsModal').style.display='none'; });
-document.getElementById('textEditModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('textEditModal')) document.getElementById('textEditModal').style.display='none'; });
 
 setLanguage(currentLang);
 initializeDatabase().then(() => { setupRealtimeListeners(); });
