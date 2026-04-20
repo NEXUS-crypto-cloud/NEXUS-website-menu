@@ -141,30 +141,24 @@
 <div id="highlightTooltip" class="highlight-tooltip"><h4><i class="fas fa-flask"></i> <span id="tooltipTitle">Termék infó</span></h4><p id="tooltipText"></p><button id="closeTooltipBtn" style="margin-top:12px; background:none; border:1px solid var(--primary); border-radius:30px; padding:4px 12px;"><span id="gotItText">Rendben</span></button></div>
 
 <script>
-    // ============================================================
-    // FIREBASE FIRESTORE - VALÓS IDEJŰ FRISSÍTÉSSEL
-    // ============================================================
     const firebaseConfig = { apiKey: "AIzaSyANzkn08nF3-_Dsg19wscz67dYRPk8pMgY", authDomain: "nexus-08.firebaseapp.com", projectId: "nexus-08", storageBucket: "nexus-08.firebasestorage.app", messagingSenderId: "1066992373942", appId: "1:1066992373942:web:cbc354f288a5c351e25617", measurementId: "G-5E16CRZ0MF" };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const provider = new firebase.auth.GoogleAuthProvider();
     const db = firebase.firestore();
     
-    // TITKOSÍTOTT ADMIN HITELESÍTÉS
     const _emailHash = "a39e125749a51c569ac9cfdb12b1de8393df63b0ad3c7b82eb52d1a861185a04";
     const _passHash = "ca68c377a947f72f3879fdd96a3e99f40392abf99b6f4fc6042f51335bd70506";
     
     async function hashEmail(text) { const encoder = new TextEncoder(); const data = encoder.encode(text.trim().toLowerCase()); const hashBuffer = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join(''); }
     async function hashPassword(text) { const encoder = new TextEncoder(); const data = encoder.encode(text); const hashBuffer = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join(''); }
     
-    // Alapértelmezett termékek
     const defaultProducts = [
         { id: "nexus_utility_tool", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusHelper-V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false, deleted: false, category: {hu:"Rendszereszköz", en:"Utility"}, name: {hu:"Windows segédprogram", en:"Windows Utility Tool"}, requirements: {hu:"🔧 Nincs szükség külső függőségre. Windows 10/11 rendszeren fut.", en:"🔧 No additional dependencies required. Runs on Windows 10/11."}, infoText: {hu:"Könnyű rendszersegéd: temp fájlok tisztítása, RAM optimalizálás, üres mappák törlése.", en:"Lightweight system helper: temp file cleanup, RAM optimization, empty folder removal."} },
         { id: "nexus_art_generator", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/AsciiArtGenerator_Setup_V1.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false, deleted: false, category: {hu:"Grafika", en:"Graphics"}, name: {hu:"ASCII Art generátor", en:"ASCII Art Generator"}, requirements: {hu:"⚠️ .NET Desktop Runtime 10.0 szükséges.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0", en:"⚠️ .NET Desktop Runtime 10.0 required.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0"}, infoText: {hu:"Képek (JPG, PNG) átalakítása ASCII karakterekké. Állítható szélesség, invertálás.", en:"Convert images (JPG, PNG) to ASCII characters. Adjustable width, invert, copy to clipboard."} },
         { id: "nexus_password_generator", githubUrl: "https://github.com/nexus-the-power/nexus-exe-store/releases/download/exe/NexusPasswordGeneratorSETUP.exe", price: "Free", fileType: ".exe", os: "Win10/11", pass: "nexus", locked: false, deleted: false, category: {hu:"Jelszó", en:"Password"}, name: {hu:"Jelszó generátor", en:"Password generator"}, requirements: {hu:"⚠️ .NET Desktop Runtime 10.0 szükséges.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0", en:"⚠️ .NET Desktop Runtime 10.0 required.<br>📥 https://dotnet.microsoft.com/download/dotnet/10.0"}, infoText: {hu:"Biztonságos, egyedi jelszavak generálása (6-48 karakter, speciális jelekkel), valós idejű erősségjelzővel.", en:"Generate secure, unique passwords (6-48 characters, including special characters) with real-time strength indicator."} },
     ];
     
-    // Globális változók
     let products = [];
     let trash = [];
     let currentLang = localStorage.getItem('nexusLang') || 'hu';
@@ -175,34 +169,29 @@
     let productsUnsubscribe = null;
     let trashUnsubscribe = null;
     
-    // License szövegek
     const licenseTexts = {
         hu: `<p><strong>Version 2.0 – Kutatási és Fejlesztési Licenc</strong><br>Utolsó frissítés: 2025. április</p><p><strong>1. Cél</strong><br>Kizárólag oktatási, tesztelési és kutatási célokra. Nem tartalmaz rosszindulatú kódot.</p><p><strong>2. Felelősség kizárása</strong><br>A szoftvert „AHOGY VAN” biztosítjuk, minden garancia nélkül.</p><p><strong>3. Felhasználói felelősség</strong><br>A felhasználó köteles betartani a helyi törvényeket, és megfelelő biztonsági környezetben tesztelni.</p><p><strong>4. Szellemi tulajdon</strong><br>A „NEXUS Collective” védjegy és a szoftver szerzői jogvédelem alatt áll.</p><p><strong>5. Téves pozitív riasztások</strong><br>Az alkalmazás fejlesztői eszközök miatt egyes antivírusok gyanúsíthatják. Ellenőrzött, nem tartalmaz fenyegetést.</p><p><strong>6. Adatvédelem</strong><br>A szoftver NEM gyűjt személyes adatot. Nincs telemetria.</p><p><strong>7. Licenc elfogadása</strong><br>Letöltéssel és használattal elfogadja a feltételeket. © 2025 NEXUS Collective.<br>Kapcsolat: nexus.collective.contact@gmail.com</p>`,
         en: `<p><strong>Version 2.0 – Research & Development License</strong><br>Last updated: April 2025</p><p><strong>1. Purpose</strong><br>For educational, testing and research purposes only. Contains no malicious code.</p><p><strong>2. Disclaimer</strong><br>The Software is provided "AS IS", without any warranty.</p><p><strong>3. User Responsibility</strong><br>User must comply with local laws and test in a secure environment.</p><p><strong>4. Intellectual Property</strong><br>"NEXUS Collective" trademark and software are copyrighted.</p><p><strong>5. False Positives</strong><br>Due to development tools, some antivirus may flag the file. It is verified and threat-free.</p><p><strong>6. Privacy</strong><br>The Software does NOT collect personal data. No telemetry.</p><p><strong>7. Acceptance</strong><br>By downloading and using, you accept the terms. © 2025 NEXUS Collective.<br>Contact: nexus.collective.contact@gmail.com</p>`
     };
     
-    // Figyelmeztető szövegek
     const warningTexts = {
         hu: `⚠️ FIGYELEM! ⚠️\n\nA Windows automatikusan vírusként észlelheti a fájlokat, mivel azok fejlesztői környezetben készültek és nem rendelkeznek hivatalos digitális aláírással.\n\n✅ GARANTÁLJUK, hogy a programok rendeltetésszerű használat mellett NEM tartalmaznak adatlopó kódot, kártékony szoftvert vagy szándékos rosszindulatú funkciót.\n\n📌 Javaslat: A letöltött fájlokat használat előtt ellenőrizd a saját biztonsági szoftvereddel, és ha bizonytalan vagy, futtasd őket szeparált környezetben (sandbox).\n\n🔐 A NEXUS Collective nem vállal felelősséget a nem rendeltetésszerű használatból eredő károkért.`,
         en: `⚠️ WARNING! ⚠️\n\nWindows may automatically detect these files as viruses because they were created in a development environment and do not have an official digital signature.\n\n✅ WE GUARANTEE that when used as intended, the programs do NOT contain data-stealing code, malicious software, or intentionally harmful functions.\n\n📌 Recommendation: Before using downloaded files, check them with your own security software, and if in doubt, run them in a separate environment (sandbox).\n\n🔐 NEXUS Collective assumes no responsibility for damages resulting from unintended use.`
     };
     
-    // Fordítások
     const translations = {
-        hu: { login:"Belépés", logout:"Kilépés", loginGoogle:"Belépés Google-lel", filterAll:"Összes", download:"LETÖLTÉS", locked:"ZÁROLT", reqBtn:"Köv.", copy:"Másol", share:"Megoszt", info:"Info", noResults:"Nincs találat.", passwordAlert:(p)=>`Jelszó: ${p}`, toastCopied:" link másolva", toastDownload:" letöltés indítása", toastLocked:"🔒 Zárt tartalom", toastNoLink:"🔒 Nincs elérhető link", toastShare:"✨ Megosztva", toastShareFail:"⚠️ Megosztás sikertelen", toastCopyFail:"❌ Másolás sikertelen", close:"Bezárás", reqTitle:"Rendszerkövetelmény", tooltipTitle:"Termék infó", gotIt:"Rendben", licenseTitle:"Szoftverlicenc és Jogi nyilatkozat", licenseBtn:"⚖️ LICENC & JOGI NYILATKOZAT", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Keresés név szerint...", tabStore:"⟡ TERMÉKEK", tabCommunity:"⟡ KÖZÖSSÉG", adminPanelTitle:"Adminisztrátori felület", addBtnText:"Új kártya hozzáadása", manageTitle:"Meglévő kártyák", trashTitle:"🗑️ Lomtár", huTitle:"Magyar (HU)", enTitle:"Angol (EN)", labelNameHu:"Név", labelNameEn:"Name", labelCatHu:"Kategória", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File típus", labelOs:"OS", labelPass:"Jelszó (lakat)", labelReqHu:"Követelmény", labelReqEn:"Requirements", labelInfoHu:"Info szöveg", labelInfoEn:"Info text", labelLocked:"Zárolt (Locked)", adminPasswordPrompt:"🔐 ADMINISZTRÁTORI HITELESÍTÉS\n\nA folytatáshoz add meg a jelszót:", adminPasswordWrong:"Hibás jelszó! Nincs hozzáférés.", adminAuthSuccess:"Admin hitelesítés sikeres!", noAdminRights:"Nincs jogosultság az admin panelhez!", editModalTitle:"Szerkesztés", save:"Mentés", cancel:"Mégse", restore:"Visszaállítás", permanentDelete:"Végleges törlés", edit:"Szerkeszt", lockUnlock:"Zárolás/Ki", delete:"Törlés", loading:"Betöltés...", realtimeActive:"Valós idejű frissítés aktív", warningBtn:"⚠️ Vírusfigyelmeztetés", warningTitle:"⚠️ Vírusfigyelmeztetés", warningClose:"Bezárás" },
-        en: { login:"Login", logout:"Logout", loginGoogle:"Login with Google", filterAll:"All", download:"DOWNLOAD", locked:"LOCKED", reqBtn:"Req.", copy:"Copy", share:"Share", info:"Info", noResults:"No results.", passwordAlert:(p)=>`Password: ${p}`, toastCopied:" link copied", toastDownload:" download started", toastLocked:"🔒 Locked content", toastNoLink:"🔒 No link available", toastShare:"✨ Shared", toastShareFail:"⚠️ Sharing failed", toastCopyFail:"❌ Copy failed", close:"Close", reqTitle:"System Requirements", tooltipTitle:"Product Info", gotIt:"Got it", licenseTitle:"Software License & Disclaimer", licenseBtn:"⚖️ LICENSE & DISCLAIMER", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Search by name...", tabStore:"⟡ PRODUCTS", tabCommunity:"⟡ COMMUNITY", adminPanelTitle:"Administrator Panel", addBtnText:"Add new card", manageTitle:"Existing cards", trashTitle:"🗑️ Trash", huTitle:"Hungarian (HU)", enTitle:"English (EN)", labelNameHu:"Name", labelNameEn:"Name", labelCatHu:"Category", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File type", labelOs:"OS", labelPass:"Password (lock)", labelReqHu:"Requirements", labelReqEn:"Requirements", labelInfoHu:"Info text", labelInfoEn:"Info text", labelLocked:"Locked", adminPasswordPrompt:"🔐 ADMIN AUTHENTICATION\n\nEnter password to continue:", adminPasswordWrong:"Wrong password! Access denied.", adminAuthSuccess:"Admin authentication successful!", noAdminRights:"Access denied!", editModalTitle:"Edit", save:"Save", cancel:"Cancel", restore:"Restore", permanentDelete:"Permanent delete", edit:"Edit", lockUnlock:"Lock/Unlock", delete:"Delete", loading:"Loading...", realtimeActive:"Real-time updates active", warningBtn:"⚠️ Virus Warning", warningTitle:"⚠️ Virus Warning", warningClose:"Close" }
+        hu: { login:"Belépés", logout:"Kilépés", loginGoogle:"Belépés Google-lel", filterAll:"Összes", download:"LETÖLTÉS", locked:"ZÁROLT", reqBtn:"Köv.", copy:"Másol", share:"Megoszt", info:"Info", noResults:"Nincs találat.", passwordAlert:(p)=>`Jelszó: ${p}`, toastCopied:" link másolva", toastDownload:" letöltés indítása", toastLocked:"🔒 Zárt tartalom", toastNoLink:"🔒 Nincs elérhető link", toastShare:"✨ Megosztva", toastShareFail:"⚠️ Megosztás sikertelen", toastCopyFail:"❌ Másolás sikertelen", close:"Bezárás", reqTitle:"Rendszerkövetelmény", tooltipTitle:"Termék infó", gotIt:"Rendben", licenseTitle:"Szoftverlicenc és Jogi nyilatkozat", licenseBtn:"⚖️ LICENC & JOGI NYILATKOZAT", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Keresés név szerint...", tabStore:"⟡ TERMÉKEK", tabCommunity:"⟡ KÖZÖSSÉG", adminPanelTitle:"Adminisztrátori felület", addBtnText:"Új kártya hozzáadása", manageTitle:"Meglévő kártyák", trashTitle:"🗑️ Lomtár", huTitle:"Magyar (HU)", enTitle:"Angol (EN)", labelNameHu:"Név", labelNameEn:"Name", labelCatHu:"Kategória", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File típus", labelOs:"OS", labelPass:"Jelszó (lakat)", labelReqHu:"Követelmény", labelReqEn:"Requirements", labelInfoHu:"Info szöveg", labelInfoEn:"Info text", labelLocked:"Zárolt (Locked)", adminPasswordPrompt:"🔐 ADMINISZTRÁTORI HITELESÍTÉS\n\nA folytatáshoz add meg a jelszót:", adminPasswordWrong:"Hibás jelszó! Nincs hozzáférés.", adminAuthSuccess:"Admin hitelesítés sikeres!", noAdminRights:"Nincs jogosultság az admin panelhez!", editModalTitle:"Szerkesztés", save:"Mentés", cancel:"Mégse", restore:"Visszaállítás", permanentDelete:"Végleges törlés", edit:"Szerkeszt", lockUnlock:"Zárolás/Ki", delete:"Törlés", loading:"Betöltés...", realtimeActive:"Valós idejű frissítés aktív", warningBtn:"⚠️ Figyelmeztetés", warningTitle:"⚠️ Figyelmeztetés", warningClose:"Bezárás" },
+        en: { login:"Login", logout:"Logout", loginGoogle:"Login with Google", filterAll:"All", download:"DOWNLOAD", locked:"LOCKED", reqBtn:"Req.", copy:"Copy", share:"Share", info:"Info", noResults:"No results.", passwordAlert:(p)=>`Password: ${p}`, toastCopied:" link copied", toastDownload:" download started", toastLocked:"🔒 Locked content", toastNoLink:"🔒 No link available", toastShare:"✨ Shared", toastShareFail:"⚠️ Sharing failed", toastCopyFail:"❌ Copy failed", close:"Close", reqTitle:"System Requirements", tooltipTitle:"Product Info", gotIt:"Got it", licenseTitle:"Software License & Disclaimer", licenseBtn:"⚖️ LICENSE & DISCLAIMER", subText:"premium .exe releases • direct GitHub", searchPlaceholder:"Search by name...", tabStore:"⟡ PRODUCTS", tabCommunity:"⟡ COMMUNITY", adminPanelTitle:"Administrator Panel", addBtnText:"Add new card", manageTitle:"Existing cards", trashTitle:"🗑️ Trash", huTitle:"Hungarian (HU)", enTitle:"English (EN)", labelNameHu:"Name", labelNameEn:"Name", labelCatHu:"Category", labelCatEn:"Category", labelUrl:"GitHub URL", labelFileType:"File type", labelOs:"OS", labelPass:"Password (lock)", labelReqHu:"Requirements", labelReqEn:"Requirements", labelInfoHu:"Info text", labelInfoEn:"Info text", labelLocked:"Locked", adminPasswordPrompt:"🔐 ADMIN AUTHENTICATION\n\nEnter password to continue:", adminPasswordWrong:"Wrong password! Access denied.", adminAuthSuccess:"Admin authentication successful!", noAdminRights:"Access denied!", editModalTitle:"Edit", save:"Save", cancel:"Cancel", restore:"Restore", permanentDelete:"Permanent delete", edit:"Edit", lockUnlock:"Lock/Unlock", delete:"Delete", loading:"Loading...", realtimeActive:"Real-time updates active", warningBtn:"⚠️ Warning", warningTitle:"⚠️ Warning", warningClose:"Close" }
     };
     function t(key, p=null){ let txt=translations[currentLang][key]; if(p && typeof txt==='function') return txt(p); return txt || key; }
     
     function showToast(msg, isError=false){ let d=document.createElement('div'); d.className='toast-msg'; d.innerText=msg; d.style.background=isError?'#6a1e3ccc':'#0f2a3ecc'; document.body.appendChild(d); setTimeout(()=>{ d.style.opacity='0'; setTimeout(()=>d.remove(),400); },2300); }
     function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>]/g,function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
-    // VALÓS IDEJŰ FIGYELŐK BEÁLLÍTÁSA
     function setupRealtimeListeners() {
         if (productsUnsubscribe) productsUnsubscribe();
         if (trashUnsubscribe) trashUnsubscribe();
         
-        // Termékek figyelése
         productsUnsubscribe = db.collection('products').onSnapshot((snapshot) => {
             products = [];
             snapshot.forEach(doc => {
@@ -220,7 +209,6 @@
             showToast("Adatbázis hiba!", true);
         });
         
-        // Lomtár figyelése
         trashUnsubscribe = db.collection('trash').onSnapshot((snapshot) => {
             trash = [];
             snapshot.forEach(doc => {
@@ -232,7 +220,6 @@
         });
     }
     
-    // RENDER FUNKCIÓK
     async function renderStore(){
         const container=document.getElementById('storeList'); if(!container) return;
         let filtered=products.filter(p=>!p.deleted && p.name[currentLang].toLowerCase().includes(searchQuery) && (activeCategory==='all' || p.category[currentLang]===activeCategory));
@@ -272,7 +259,6 @@
     }
     document.getElementById('searchInput').addEventListener('input',e=>{ searchQuery=e.target.value.toLowerCase(); renderStore(); });
     
-    // ADMIN FUNKCIÓK
     async function checkAdminAccess(user) {
         if(user && user.email){ const emailHash=await hashEmail(user.email); if(emailHash===_emailHash){ adminEmailMatched=true; document.getElementById('adminTabBtn').style.display='block'; return; } }
         adminEmailMatched=false; adminAuthorized=false; document.getElementById('adminTabBtn').style.display='none';
@@ -458,13 +444,11 @@
     
     ['newCatHuBtn','newCatEnBtn'].forEach(btnId=>{ document.getElementById(btnId)?.addEventListener('click',()=>{ const isHu=btnId==='newCatHuBtn'; const inputId=isHu?'prodCatHuNew':'prodCatEnNew'; const selectId=isHu?'prodCatHuSelect':'prodCatEnSelect'; const input=document.getElementById(inputId); if(input.style.display==='none'){ input.style.display='block'; input.focus(); input.onblur=()=>{ if(input.value.trim()){ const newOption=document.createElement('option'); newOption.value=input.value.trim(); newOption.textContent=input.value.trim(); const select=document.getElementById(selectId); select.appendChild(newOption); select.value=input.value.trim(); input.style.display='none'; input.value=''; showToast(currentLang==='hu'?'Új kategória hozzáadva':'New category added'); } else { input.style.display='none'; input.value=''; } }; } else { input.style.display='none'; input.value=''; } }); });
     
-    // Figyelmeztető gomb eseménykezelő
     document.getElementById('warningBtn').addEventListener('click', () => {
         document.getElementById('warningContent').innerHTML = warningTexts[currentLang].replace(/\n/g, '<br>');
         document.getElementById('warningModal').style.display = 'flex';
     });
     
-    // Adatbázis inicializálás (első betöltéskor)
     async function initializeDatabase() {
         const snapshot = await db.collection('products').get();
         if (snapshot.empty) {
@@ -520,7 +504,6 @@
     document.getElementById('requirementsModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('requirementsModal')) document.getElementById('requirementsModal').style.display='none'; });
     document.getElementById('textEditModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('textEditModal')) document.getElementById('textEditModal').style.display='none'; });
     
-    // INDÍTÁS
     setLanguage(currentLang);
     initializeDatabase().then(() => {
         setupRealtimeListeners();
