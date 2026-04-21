@@ -1,9 +1,9 @@
-# NΞXUS
+# Nyxion
 
 Gaming • Programs • Innovative Tech
 
 ## 🚀 About
-NΞXUS is a project focused on creating unique tools, programs, and experimental concepts for entertainment and educational purposes.
+Nyxion is a project focused on creating unique tools, programs, and experimental concepts for entertainment and educational purposes.
 
 This includes:
 - Custom programs
@@ -12,14 +12,13 @@ This includes:
 - Gaming-related content
 
 ## 🌐 Website
-TinyURL: https://tinyurl.com/nexus-store
-GitHUB: https://nexus-the-power.github.io/NEXUS-website-menu/
+GitHUB: 
 
 ## 💬 Discord
-https://discord.com/invite/Ac5eRRCEgz
+
 
 ## 📺 YouTube
-https://www.youtube.com/channel/UCCHUo4oRYy2uYM8mnD_X-zg
+
 
 ## 📦 Downloads
 All downloadable files are available on the website.
@@ -32,4 +31,4 @@ By using any files:
 - You use everything at your own risk
 - Redistribution is not allowed without permission
 
-NΞXUS is not responsible for any damage caused by misuse.
+Nyxion is not responsible for any damage caused by misuse.
