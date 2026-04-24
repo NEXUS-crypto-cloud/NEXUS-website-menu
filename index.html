@@ -150,12 +150,10 @@ const firebaseConfig = {
   messagingSenderId: "952595532605",
   appId: "1:952595532605:web:49e58df3b31d451ed61354"
 };
-    
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 const db = firebase.firestore();
-
 const ADMIN_EMAIL_HASH = "a39e125749a51c569ac9cfdb12b1de8393df63b0ad3c7b82eb52d1a861185a04";
 
 async function hashEmail(text) { 
@@ -417,7 +415,6 @@ function attachCardEvents(){
         });
     });
 }
-
 
 function buildCategoryFilters(){
     const cats = [...new Set(products.filter(p => !p.deleted).map(p => p.category[currentLang]))];
@@ -892,7 +889,7 @@ async function initializeDatabase() {
     if (snapshot.empty) {
         const defaultProducts = [
             {
-			}
+            }
         ];
         for (const prod of defaultProducts) {
             await db.collection('products').doc(prod.id).set(prod);
