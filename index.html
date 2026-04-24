@@ -247,21 +247,35 @@ function setupRealtimeListener() {
     console.log("Listener beállítása...");
     
     db.collection('products').onSnapshot((snapshot) => {
-        console.log("Snapshot érkezett, dokumentumok száma:", snapshot.size);
+        console.log("SNAPSHOT érkezett, dokumentumok száma:", snapshot.size);
+        
+        // Töltsd fel a products tömböt
         products = [];
         snapshot.forEach(doc => { 
             const data = doc.data();
             data.id = doc.id;
-            console.log("Betöltött termék:", data.id, data.name);
-            if (!data.deleted) products.push(data); 
+            console.log("Termék adatok:", data.id, data.name);
+            if (data.deleted !== true) {
+                products.push(data);
+            }
         });
+        
         console.log("Products tömb hossza:", products.length);
+        console.log("Products tartalma:", products);
+        
+        // Frissítsd a megjelenítést
         renderStore();
         buildCategoryFilters();
-        document.getElementById('realtimeStatus').innerHTML = `<i class="fas fa-check-circle"></i> ${t('realtimeActive')}`;
+        
+        // Frissítsd a státuszt
+        const statusElem = document.getElementById('realtimeStatus');
+        if (statusElem) {
+            statusElem.innerHTML = `<i class="fas fa-check-circle"></i> ${t('realtimeActive')}`;
+        }
+        
     }, (error) => { 
         console.error("Listener hiba:", error);
-        showToast("Adatbázis hiba! Ellenőrizd a Firebase beállításokat.", true);
+        showToast("Adatbázis hiba: " + error.message, true);
     });
 }
 
