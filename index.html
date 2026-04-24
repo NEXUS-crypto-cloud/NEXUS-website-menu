@@ -210,8 +210,6 @@ const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 const db = firebase.firestore();
 
-// ÁLLÍTSD BE A SAJÁT EMAILED ÉS JELSZAVAD HASH-ÉT ITT:
-// https://emn178.github.io/online-tools/sha256.html
 const _emailHash = "a39e125749a51c569ac9cfdb12b1de8393df63b0ad3c7b82eb52d1a861185a04";
 const _passHash = "ca68c377a947f72f3879fdd96a3e99f40392abf99b6f4fc6042f51335bd70506";
 
@@ -266,18 +264,71 @@ function setupRealtimeListeners() {
     }, (error) => { console.error("Products listener error:", error); showToast("Adatbázis hiba! Ellenőrizd a Firestore szabályokat.", true); });
 }
 
-async function renderStore(){
-    const container=document.getElementById('storeList'); if(!container) return;
-    let filtered=products.filter(p=>!p.deleted && p.name && p.name[currentLang]?.toLowerCase().includes(searchQuery) && (activeCategory==='all' || p.category?.[currentLang]===activeCategory));
-    if(filtered.length===0){ container.innerHTML=`<div class="no-results"><i class="fas fa-box-open"></i> ${t('noResults')}</div>`; return; }
-    container.innerHTML='';
-    for(const prod of filtered){
-        const card=document.createElement('div'); card.className='glass-card'; if(prod.locked) card.classList.add('locked-card'); card.setAttribute('data-info',prod.infoText?.[currentLang] || '');
-        const passHtml=!prod.locked?`<button class="pass-btn" data-pass="${prod.pass}"><i class="fas fa-lock"></i></button>`:`<button class="pass-btn" disabled style="opacity:0.4;"><i class="fas fa-hourglass-half"></i></button>`;
-        const downloadBtn=!prod.locked?`<button class="btn-download" data-url="${prod.githubUrl}" data-name="${prod.name?.[currentLang]}"><i class="fas fa-download"></i> ${t('download')}</button>`:`<button class="btn-download" disabled style="background:#2a2a44;cursor:not-allowed;"><i class="fas fa-lock"></i> ${t('locked')}</button>`;
-        const reqBtn=!prod.locked?`<button class="btn-requirements requirements-btn" data-req="${escapeHtml(prod.requirements?.[currentLang] || '')}"><i class="fas fa-info-circle"></i> ${t('reqBtn')}</button>`:'';
+function renderStore() {
+    const container = document.getElementById('storeList');
+    if (!container) {
+        console.error("storeList elem nem található!");
+        return;
+    }
+    
+    console.log("Termékek száma:", products.length);
+    console.log("Aktív kategória:", activeCategory);
+    console.log("Keresés:", searchQuery);
+    
+    let filtered = products.filter(p => 
+        !p.deleted && 
+        (p.name?.[currentLang] || '').toLowerCase().includes(searchQuery) && 
+        (activeCategory === 'all' || (p.category?.[currentLang] || '') === activeCategory)
+    );
+    
+    console.log("Szűrt termékek száma:", filtered.length);
+    
+    if (filtered.length === 0) { 
+        container.innerHTML = `<div class="no-results"><i class="fas fa-box-open"></i> ${t('noResults')}</div>`; 
+        return; 
+    }
+    
+    container.innerHTML = '';
+    for (const prod of filtered) {
+        console.log("Megjelenítés:", prod.name?.[currentLang]);
+        
+        const card = document.createElement('div');
+        card.className = 'glass-card';
+        if (prod.locked) card.classList.add('locked-card');
+        card.setAttribute('data-info', escapeHtml(prod.infoText?.[currentLang] || ''));
+        
+        const passHtml = !prod.locked ? 
+            `<button class="pass-btn" data-pass="${escapeHtml(prod.pass || 'nyxion')}"><i class="fas fa-lock"></i></button>` : 
+            `<button class="pass-btn" disabled style="opacity:0.4;"><i class="fas fa-hourglass-half"></i></button>`;
+        
+        const downloadBtn = !prod.locked ? 
+            `<button class="btn-download" data-url="${escapeHtml(prod.githubUrl)}" data-name="${escapeHtml(prod.name[currentLang])}"><i class="fas fa-download"></i> ${t('download')}</button>` : 
+            `<button class="btn-download" disabled style="background:#2a2a44;cursor:not-allowed;"><i class="fas fa-lock"></i> ${t('locked')}</button>`;
+        
+        const reqBtn = !prod.locked ? 
+            `<button class="btn-requirements requirements-btn" data-req="${escapeHtml(prod.requirements?.[currentLang] || '')}"><i class="fas fa-info-circle"></i> ${t('reqBtn')}</button>` : '';
+        
         const copyShareClass = prod.locked ? 'disabled' : '';
-        card.innerHTML=`<div class="category-badge"><i class="fas fa-tag"></i> ${prod.category?.[currentLang] || ''}</div><div class="card-header"><h2>${escapeHtml(prod.name?.[currentLang] || '')}</h2></div><div class="product-details"><span class="price-badge"><i class="fas fa-gem"></i> Free</span><span class="file-type"><i class="fas fa-file-code"></i> ${prod.fileType || ''}</span><span class="os-badge"><i class="fab fa-windows"></i> ${prod.os || ''}</span>${passHtml}</div><div class="button-group">${downloadBtn} ${reqBtn}</div><div class="secondary-actions"><button class="icon-btn copy-link-btn ${copyShareClass}" data-url="${prod.githubUrl}" data-name="${prod.name?.[currentLang]}" ${prod.locked?'disabled':''}><i class="fas fa-copy"></i> <span>${t('copy')}</span></button><button class="icon-btn share-btn ${copyShareClass}" data-url="${prod.githubUrl}" data-name="${prod.name?.[currentLang]}" ${prod.locked?'disabled':''}><i class="fas fa-share-alt"></i> <span>${t('share')}</span></button><button class="highlight-btn"><i class="fas fa-circle-info"></i> ${t('info')}</button></div>`;
+        
+        card.innerHTML = `
+            <div class="category-badge"><i class="fas fa-tag"></i> ${escapeHtml(prod.category?.[currentLang] || 'Egyéb')}</div>
+            <div class="card-header"><h2>${escapeHtml(prod.name[currentLang])}</h2></div>
+            <div class="product-details">
+                <span class="price-badge"><i class="fas fa-gem"></i> Free</span>
+                <span class="file-type"><i class="fas fa-file-code"></i> ${escapeHtml(prod.fileType || '.exe')}</span>
+                <span class="os-badge"><i class="fab fa-windows"></i> ${escapeHtml(prod.os || 'Win10/11')}</span>
+                ${passHtml}
+            </div>
+            <div class="button-group">
+                ${downloadBtn} 
+                ${reqBtn}
+            </div>
+            <div class="secondary-actions">
+                <button class="icon-btn copy-link-btn ${copyShareClass}" data-url="${escapeHtml(prod.githubUrl)}" data-name="${escapeHtml(prod.name[currentLang])}" ${prod.locked ? 'disabled' : ''}><i class="fas fa-copy"></i> <span>${t('copy')}</span></button>
+                <button class="icon-btn share-btn ${copyShareClass}" data-url="${escapeHtml(prod.githubUrl)}" data-name="${escapeHtml(prod.name[currentLang])}" ${prod.locked ? 'disabled' : ''}><i class="fas fa-share-alt"></i> <span>${t('share')}</span></button>
+                <button class="highlight-btn"><i class="fas fa-circle-info"></i> ${t('info')}</button>
+            </div>
+        `;
         container.appendChild(card);
     }
     attachCardEvents();
